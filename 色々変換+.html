@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <h1>色々変換+</h1>
+<button id="decimalToBinaryButton">10進数→2進数</button>
+<input type="text" id="decimalToBinaryInput">
+<p>変換結果(2進数):
+<div id="decimalToBinaryResult"></div>
+</p>
+
+<button id="decimalToHexButton">10進数→16進数</button>
+<input type="text" id="decimalToHexInput">
+<p>変換結果(16進数):
+<div id="decimalToHexResult"></div>
+</p>
+
+<button id="uuidB">UUID生成</button>
+<p>生成結果:
+<div id="uuidD"></div>
+</p>
+
+<script>
+  const decimalToBinaryButton = document.getElementById("decimalToBinaryButton");
+  const decimalToBinaryInput = document.getElementById("decimalToBinaryInput");
+  const decimalToBinaryResultDiv = document.getElementById("decimalToBinaryResult");
+
+  decimalToBinaryButton.addEventListener("click", () => {
+    const inputValue = decimalToBinaryInput.value;
+    const binaryResult = decimalToBinary(inputValue);
+    decimalToBinaryResultDiv.textContent = binaryResult;
+  });
+
+  function decimalToBinary(decimal) {
+    if (isNaN(decimal)) {
+      return "半角数字を入力してください";
+    }
+    return parseInt(decimal).toString(2);
+  }
+
+  const decimalToHexButton = document.getElementById("decimalToHexButton");
+  const decimalToHexInput = document.getElementById("decimalToHexInput");
+  const decimalToHexResultDiv = document.getElementById("decimalToHexResult");
+
+  decimalToHexButton.addEventListener("click", () => {
+    const inputValue = decimalToHexInput.value;
+    const hexResult = decimalToHex(inputValue);
+    decimalToHexResultDiv.textContent = hexResult;
+  });
+
+  function decimalToHex(decimal) {
+    if (isNaN(decimal)) {
+      return "数字を入力してください";
+    }
+    return parseInt(decimal).toString(16).toUpperCase();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+      const uuidButton = document.getElementById('uuidB');
+      const uuidDisplay = document.getElementById('uuidD');
+      const copyButton = document.getElementById('copyB'); // コピーボタンのID
+      const r = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+
+      async function copyTextToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          console.log('UUIDがクリップボードにコピーされました！');
+          // 必要に応じて成功時の処理を追加 (例: メッセージ表示)
+        } catch (err) {
+          console.error('クリップボードへのコピーに失敗しました: ', err);
+          // 必要に応じて失敗時の処理を追加 (例: エラーメッセージ表示)
+        }
+      }
+
+      uuidButton.addEventListener('click', function() {
+        let uuid = "";
+        for (let i = 0; i < 32; i++) {
+          uuid += r[Math.floor(Math.random() * r.length)];
+          if ((i + 1) === 8 || (i + 1) === 12 || (i + 1) === 16 || (i + 1) === 20) {
+            uuid += "-";
+          }
+        }
+        uuidDisplay.textContent = uuid;
+      });      
+    });
+
+</script>
+
+<h1>文字列変換</h1>
+
+<label for="inputText">入力文字列:</label>
+<textarea id="inputText" rows="4" cols="50"></textarea><br><br>
+
+<label for="searchString">検索文字列:</label>
+<input type="text" id="searchString"><br><br>
+
+<label for="replaceString">置換文字列:</label>
+<input type="text" id="replaceString"><br><br>
+
+<button onclick="replaceText()">変換</button><br><br>
+
+<label for="outputText">出力文字列:</label>
+<textarea id="outputText" rows="4" cols="50" readonly></textarea>
+
+<script>
+function replaceText() {
+  const inputText = document.getElementById("inputText").value;
+  const searchString = document.getElementById("searchString").value;
+  const replaceString = document.getElementById("replaceString").value;
+  const outputText = document.getElementById("outputText");
+
+  // すべての検索文字列を置換する
+  const replacedText = inputText.replaceAll(searchString, replaceString);
+
+  outputText.value = replacedText;
+}
+</script>
+
+</html>
