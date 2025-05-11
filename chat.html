@@ -34,6 +34,11 @@
         .message b {
             font-weight: bold;
         }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -41,17 +46,19 @@
         <label for="name">名前：</label>
         <input type="text" id="name" class="name-input">
         <label for="message">メッセージ：</label>
-        <input type="text" id="message" class="message-input">
-        <button onclick="sendMessage()">送信</button>
+        <input type="text" id="message" class="message-input" maxlength="50">
+        <button id="sendButton" onclick="sendMessage()">送信</button>
     </div>
     <div id="chat-area">
         </div>
     <script>
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbyLclXkN0hP5LY6gaYWnsBDkxLvgX4kJr5bGQmHvZgSJbiYCgulhmNuNrDEjbu5eAI/exec'; // GAS の Web アプリの URL
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbxxdxCGPthT2cabaFI2M23GvwOomcYRusfcOThSWyx_kagCOIQ3S9OkZyApA4lYVOQ/exec';
         const chatArea = document.getElementById('chat-area');
         const nameInput = document.getElementById('name');
         const messageInput = document.getElementById('message');
+        const sendButton = document.getElementById('sendButton');
         const fetchInterval = 3000; // 3秒ごとにメッセージをポーリング
+        let isSending = false;
 
         function fetchChatMessages() {
             fetch(webAppUrl) // GETリクエスト
@@ -70,10 +77,24 @@
         }
 
         function sendMessage() {
+            if (isSending) {
+                return; // 送信中は処理を行わない
+            }
+
             const name = nameInput.value.trim();
             const message = messageInput.value.trim();
 
             if (name && message) {
+                // JavaScript 側でも文字数制限を確認 (念のため)
+                if (message.length > 50) {
+                    alert('メッセージは50文字以内で入力してください。');
+                    return;
+                }
+
+                isSending = true;
+                sendButton.disabled = true;
+                sendButton.textContent = '送信中...';
+
                 const params = new URLSearchParams();
                 params.append('name', name);
                 params.append('message', message);
@@ -89,13 +110,19 @@
                 .then(data => {
                     if (data.status === 'success') {
                         messageInput.value = '';
-                        // 送信成功後、すぐにメッセージを再読み込み
                         fetchChatMessages();
                     } else {
                         alert('メッセージの送信に失敗しました: ' + data.message);
                     }
                 })
-                .catch(error => console.error('Error sending message:', error));
+                .catch(error => console.error('Error sending message:', error))
+                .finally(() => {
+                    setTimeout(() => {
+                        isSending = false;
+                        sendButton.disabled = false;
+                        sendButton.textContent = '送信';
+                    }, 10000); // 10000ミリ秒 = 10秒後にボタンを有効に戻す
+                });
             } else if (!name) {
                 alert('名前を入力してください。');
             } else {
@@ -107,7 +134,7 @@
         fetchChatMessages();
         setInterval(fetchChatMessages, fetchInterval);
 
-        // Enterキーでの送信処理はそのまま
+        // Enterキーでの送信処理
         messageInput.addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 sendMessage();
