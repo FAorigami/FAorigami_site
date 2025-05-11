@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>チャット</title>
+    <style>
+        .chat-container {
+            display: flex;
+            align-items: center; /* 名前欄と入力欄、送信ボタンを垂直方向に中央揃え */
+            margin-bottom: 10px; /* チャットエリアとの間に少しスペースを作る */
+        }
+
+        .name-input {
+            margin-right: 10px; /* 名前欄と入力欄の間にスペースを作る */
+        }
+
+        .message-input {
+            margin-right: 10px; /* 入力欄と送信ボタンの間にスペースを作る */
+            flex-grow: 1; /* 入力欄が利用可能なスペースを埋めるようにする */
+        }
+
+        #chat-area {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px; /* チャットエリアの高さの例 */
+            overflow-y: auto; /* メッセージが多くなった場合にスクロールできるようにする */
+        }
+
+        .message {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .message b {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <label for="name">名前：</label>
+        <input type="text" id="name" class="name-input">
+        <label for="message">メッセージ：</label>
+        <input type="text" id="message" class="message-input">
+        <button onclick="sendMessage()">送信</button>
+    </div>
+    <div id="chat-area">
+        </div>
+    <script>
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbxxdxCGPthT2cabaFI2M23GvwOomcYRusfcOThSWyx_kagCOIQ3S9OkZyApA4lYVOQ/exec'; // GAS の Web アプリの URL
+        const chatArea = document.getElementById('chat-area');
+        const nameInput = document.getElementById('name');
+        const messageInput = document.getElementById('message');
+        const fetchInterval = 3000; // 3秒ごとにメッセージをポーリング
+
+        function fetchChatMessages() {
+            fetch(webAppUrl) // GETリクエスト
+                .then(response => response.json())
+                .then(messages => {
+                    chatArea.innerHTML = ''; // 既存のメッセージをクリア
+                    messages.forEach(msg => {
+                        const newMessageElement = document.createElement('div');
+                        newMessageElement.classList.add('message');
+                        newMessageElement.innerHTML = `[${new Date(msg.timestamp).toLocaleTimeString()}] <b>${msg.name}:</b> ${msg.message}`;
+                        chatArea.appendChild(newMessageElement);
+                    });
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                })
+                .catch(error => console.error('Error fetching chat messages:', error));
+        }
+
+        function sendMessage() {
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim();
+
+            if (name && message) {
+                const params = new URLSearchParams();
+                params.append('name', name);
+                params.append('message', message);
+
+                fetch(webAppUrl, { // POSTリクエスト
+                    method: 'POST',
+                    body: params,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        messageInput.value = '';
+                        // 送信成功後、すぐにメッセージを再読み込み
+                        fetchChatMessages();
+                    } else {
+                        alert('メッセージの送信に失敗しました: ' + data.message);
+                    }
+                })
+                .catch(error => console.error('Error sending message:', error));
+            } else if (!name) {
+                alert('名前を入力してください。');
+            } else {
+                alert('メッセージを入力してください。');
+            }
+        }
+
+        // ページ読み込み時と定期的にメッセージを更新
+        fetchChatMessages();
+        setInterval(fetchChatMessages, fetchInterval);
+
+        // Enterキーでの送信処理はそのまま
+        messageInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
