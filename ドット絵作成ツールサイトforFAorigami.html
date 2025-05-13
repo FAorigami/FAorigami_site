@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>16x16 塗り絵</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+        }
+        #terms-link {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #f0f0f0;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 1000; /* 他の要素より前面に表示 */
+        }
+        #terms-link a {
+            text-decoration: none;
+            color: #333;
+        }
+        #canvas {
+            border: 1px solid black;
+            cursor: default;
+        }
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            margin-left: 20px;
+        }
+        #palette {
+            margin-top: 10px;
+        }
+        .color {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .color.selected {
+            border: 2px solid blue;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+        #colorInput {
+            margin-top: 10px;
+        }
+        #savedColors {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        #savedColors button {
+            width: 40px;
+            height: 40px;
+            margin: 5px;
+            border: 1px solid black;
+            cursor: pointer;
+        }
+        #eraser {
+            background-color: transparent;
+            color: black;
+            border: 1px solid black;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #eraser.selected {
+            background-color: lightgray;
+            color: black;
+            border: 2px solid black;
+        }
+        #download {
+            margin-top: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #setColor, #saveColor {
+            margin-left: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #colorInput label {
+            margin-right: 5px;
+        }
+        #colorInput input[type="number"] {
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div id="terms-link">
+        <a href="https://faorigami21.github.io/FAorigami_site/ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項.html" target="_blank">利用規約と注意事項</a>
+    </div>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <div class="controls-container">
+        <div id="palette">
+            <div class="color" style="background-color: black;" data-color="black"></div>
+            <div class="color" style="background-color: red;" data-color="red"></div>
+            <div class="color" style="background-color: blue;" data-color="blue"></div>
+            <div class="color" style="background-color: green;" data-color="green"></div>
+            <div class="color" style="background-color: yellow;" data-color="yellow"></div>
+            <div class="color" style="background-color: white;" data-color="white"></div>
+        </div>
+        <div id="controls">
+            <button id="eraser">消しゴム</button>
+            <button id="download">ダウンロード</button>
+            <div style="margin-top: 10px;">
+                <label for="filename">ファイル名:</label>
+                <input type="text" id="filename">
+            </div>
+            <div style="margin-top: 10px;">
+                <label for="imageSize">画像サイズ:</label>
+                <input type="number" id="imageSize" value="16" min="1">
+            </div>
+            <div style="margin-top: 10px;">
+                <label>ファイル形式:</label>
+                <input type="radio" id="pngFormat" name="fileFormat" value="png" checked>
+                <label for="pngFormat">PNG</label>
+                <input type="radio" id="bmpFormat" name="fileFormat" value="bmp">
+                <label for="bmpFormat">BMP</label>
+            </div>
+        </div>
+        <div id="colorInput">
+            <label for="red">赤:</label><input type="number" id="red" value="0" min="0" max="255">
+            <label for="green">緑:</label><input type="number" id="green" value="0" min="0" max="255">
+            <label for="blue">青:</label><input type="number" id="blue" value="0" min="0" max="255">
+            <button id="setColor">色を設定</button>
+            <button id="saveColor">色を保存</button>
+        </div>
+        <div id="savedColors"></div>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const palette = document.getElementById('palette');
+        const eraserButton = document.getElementById('eraser');
+        const downloadButton = document.getElementById('download');
+        const redInput = document.getElementById('red');
+        const greenInput = document.getElementById('green');
+        const blueInput = document.getElementById('blue');
+        const setColorButton = document.getElementById('setColor');
+        const saveColorButton = document.getElementById('saveColor');
+        const savedColorsDiv = document.getElementById('savedColors');
+        const filenameInput = document.getElementById('filename');
+        const imageSizeInput = document.getElementById('imageSize');
+        const pngFormatRadio = document.getElementById('pngFormat');
+        const bmpFormatRadio = document.getElementById('bmpFormat');
+
+        const gridSize = 16;
+        const cellSize = 25;
+        const canvasWidth = gridSize * cellSize;
+        const canvasHeight = gridSize * cellSize;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        let currentColor = 'black';
+        let isErasing = false;
+        let isDrawing = false;
+        let shouldDrawGrid = true; // 通常描画時にグリッド線を描画するかどうかのフラグ
+
+        // 色の数値定義
+        const COLOR_NONE = 0;
+        const COLOR_BLACK = 1;
+        const COLOR_RED = 2;
+        const COLOR_BLUE = 3;
+        const COLOR_GREEN = 4;
+        const COLOR_YELLOW = 5;
+        const COLOR_WHITE = 6;
+        let customColorIndex = 7;
+        let savedColors = {};
+
+        // パレットの各色とCOLOR_* 定数の紐付け
+        const paletteColors = {
+            'black': COLOR_BLACK,
+            'red': COLOR_RED,
+            'blue': COLOR_BLUE,
+            'green': COLOR_GREEN,
+            'yellow': COLOR_YELLOW,
+            'white': COLOR_WHITE
+        };
+
+        // 多次元配列の初期化
+        var pixelData = [];
+        for (var i = 0; i < 16; i++) {
+            pixelData[i] = [];
+            for (var j = 0; j < 16; j++) {
+                pixelData[i][j] = 0;
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = 'lightgray'; // グリッド線の色を薄い灰色に設定
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    ctx.strokeRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // 毎回キャンバスをクリア
+
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    let color;
+                    const pixelValue = pixelData[i][j];
+                    if (pixelValue === COLOR_NONE) {
+                        color = 'transparent';
+                    } else if (pixelValue === COLOR_BLACK) {
+                        color = 'black';
+                    } else if (pixelValue === COLOR_RED) {
+                        color = 'red';
+                    } else if (pixelValue === COLOR_BLUE) {
+                        color = 'blue';
+                    } else if (pixelValue === COLOR_GREEN) {
+                        color = 'green';
+                    } else if (pixelValue === COLOR_YELLOW) {
+                        color = 'yellow';
+                    } else if (pixelValue === COLOR_WHITE) {
+                        color = 'white';
+                    } else if (savedColors[pixelValue]) {
+                        color = savedColors[pixelValue];
+                    } else {
+                        color = 'transparent';
+                    }
+                    ctx.fillStyle = color;
+                    ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                }
+            }
+
+            if (shouldDrawGrid) { // フラグが true の場合のみグリッド線を描画
+                drawGrid();
+            }
+        }
+
+        drawCanvas(); // 初回描画
+
+        palette.addEventListener('click', (e) => {
+            if (e.target.classList.contains('color')) {
+                currentColor = e.target.style.backgroundColor;
+                isErasing = false;
+                palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+                e.target.classList.add('selected');
+                eraserButton.classList.remove('selected');
+            }
+        });
+
+        eraserButton.addEventListener('click', () => {
+            isErasing = true;
+            eraserButton.classList.add('selected');
+            palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            paint(e);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) {
+                paint(e);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            isDrawing = false;
+        });
+
+        function paint(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / cellSize);
+            const y = Math.floor((e.clientY - rect.top) / cellSize);
+
+            if (isErasing) {
+                pixelData[x][y] = COLOR_NONE;
+                ctx.clearRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            } else {
+                let colorCode;
+                if (paletteColors[currentColor]) {
+                    colorCode = paletteColors[currentColor];
+                } else if (typeof currentColor === 'number' && currentColor >= 7) {
+                    colorCode = currentColor;
+                }
+                if (colorCode !== undefined) {
+                    pixelData[x][y] = colorCode;
+                }
+            }
+            drawCanvas();
+        }
+
+        downloadButton.addEventListener('click', () => {
+            shouldDrawGrid = false;
+            drawCanvas();
+
+            const downloadSize = parseInt(imageSizeInput.value);
+            const downloadCanvas = document.createElement('canvas');
+            downloadCanvas.width = downloadSize;
+            downloadCanvas.height = downloadSize;
+            const downloadCtx = downloadCanvas.getContext('2d');
+
+            // 元の16x16のピクセルデータを新しいサイズに合わせて描画
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    let color;
+                    if (pixelData[i][j] === COLOR_NONE) {
+                        color = 'rgba(0,0,0,0)';
+                    } else if (pixelData[i][j] === COLOR_BLACK) {
+                        color = 'black';
+                    } else if (pixelData[i][j] === COLOR_RED) {
+                        color = 'red';
+                    } else if (pixelData[i][j] === COLOR_BLUE) {
+                        color = 'blue';
+                    } else if (pixelData[i][j] === COLOR_GREEN) {
+                        color = 'green';
+                    } else if (pixelData[i][j] === COLOR_YELLOW) {
+                        color = 'yellow';
+                    } else if (pixelData[i][j] === COLOR_WHITE) {
+                        color = 'white';
+                    } else {
+                        color = savedColors[pixelData[i][j]] || 'rgba(0,0,0,0)';
+                    }
+                    // 描画先のキャンバスの対応する位置に1x1の正方形を描画
+                    const x = Math.floor(i * downloadSize / gridSize);
+                    const y = Math.floor(j * downloadSize / gridSize);
+                    const width = Math.ceil((i + 1) * downloadSize / gridSize) - x;
+                    const height = Math.ceil((j + 1) * downloadSize / gridSize) - y;
+                    downloadCtx.fillStyle = color;
+                    downloadCtx.fillRect(x, y, width, height);
+                }
+            }
+
+            let selectedFormat = 'image/png';
+            let fileExtension = '.png';
+            if (bmpFormatRadio.checked) {
+                selectedFormat = 'image/bmp';
+                fileExtension = '.bmp';
+            }
+
+            const filename = filenameInput.value.trim() === '' ? 'pixel_art' + fileExtension : filenameInput.value.trim() + fileExtension;
+            const link = document.createElement('a');
+            link.href = downloadCanvas.toDataURL(selectedFormat);
+            link.download = filename;
+            link.click();
+
+            shouldDrawGrid = true;
+            drawCanvas();
+        });
+
+        setColorButton.addEventListener('click', () => {
+            const red = parseInt(redInput.value);
+            const green = parseInt(greenInput.value);
+            const blue = parseInt(blueInput.value);
+
+            if (red >= 0 && red <= 255 && green >= 0 && green <= 255 && blue >= 0 && blue <= 255) {
+                currentColor = `rgb(${red}, ${green}, ${blue})`;
+                isErasing = false;
+                palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+                eraserButton.classList.remove('selected');
+            } else {
+                alert('赤、緑、青の値は0から255の範囲で入力してください。');
+            }
+        });
+
+        saveColorButton.addEventListener('click', () => {
+            const red = parseInt(redInput.value);
+            const green = parseInt(greenInput.value);
+            const blue = parseInt(blueInput.value);
+
+            if (red >= 0 && red <= 255 && green >= 0 && green <= 255 && blue >= 0 && blue <= 255) {
+                currentColor = `rgb(${red}, ${green}, ${blue})`;
+                savedColors[customColorIndex] = currentColor;
+                const button = document.createElement('button');
+                button.style.backgroundColor = currentColor;
+                button.style.border = '1px solid black';
+                button.addEventListener('click', () => {
+                    currentColor = parseInt(button.dataset.colorIndex);
+                    isErasing = false;
+                    palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+                    eraserButton.classList.remove('selected');
+                });
+                button.dataset.colorIndex = customColorIndex;
+                savedColorsDiv.appendChild(button);
+                customColorIndex++;
+            } else {
+                alert('赤、緑、青の値は0から255の範囲で入力してください。');
+            }
+        });
+    </script>
+</body>
+</html>
