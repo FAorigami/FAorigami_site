@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAorigamiのダウンロードサイト</title>
+    <title>FAorigamiのアプリダウンロードサイト</title>
     <style>
         .disabled-link {
             pointer-events: none; /* クリックを無効化 */
@@ -28,23 +28,15 @@
         <input type="checkbox" id="agreementCheck"> 上記の<a href="https://faorigami21.github.io/FAorigami_site/FAorigamiのファイルダウンロード利用規約" target="_blank">利用規約</a>に同意します
     </label>
     <br><br><br>
-    <a id="skipInitLink" href="" class="disabled-link">コマンドの初期設定スキップアドオン</a>
+    <a id="skipInitLink" href="https://drive.usercontent.google.com/download?id=1nvDYOLQQzXa_lpXDHA43UXdcI8FZPOZO&export=download&authuser=0" class="disabled-link">aMmF version-0.0.1</a>
     <br><br>
-
-    <a href=""></a>
-    <br><br>
-    <a href=""></a>
-    <br><br>
-    <a href=""></a>
-    <br><br>
-    <a href=""></a>
 
     <script>
         const agreementCheck = document.getElementById('agreementCheck');
         const bridgeWorldLink = document.getElementById('bridgeWorldLink');
         const plantAddonLink = document.getElementById('plantAddonLink');
         const skipInitLink = document.getElementById('skipInitLink');
-        const links = [bridgeWorldLink, plantAddonLink, skipInitLink]; // 制御したいリンクを配列に追加
+        const links = [skipInitLink]; // 制御したいリンクを配列に追加
 
         agreementCheck.addEventListener('change', function() {
             links.forEach(link => {
