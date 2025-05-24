@@ -32,15 +32,39 @@
     .right-align-link {
       text-align: right;
     }
-    </style>
-    </head>
-    <body>
-      <p class="large-text">FAorigamiのサイト</p>
-      <div style="text-align: right; display: block;">
-        <a href="https://x.com/faorigami" target="_blank">FAorigamiのプロフィール</a>
-      </div>
-    <br>
-  <h2>
+
+    /* 注意事項のスタイル */
+    #notes-content {
+      display: none; /* 初期状態では非表示 */
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-top: 20px;
+      background-color: #f0f0f0;
+    }
+
+    #toggleNotesBtn {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    #toggleNotesBtn:hover {
+      background-color: #0056b3;
+    }
+</style>
+</head>
+<body>
+  <p class="large-text">FAorigamiのサイト</p>
+  <div style="text-align: right; display: block;">
+    <a href="https://x.com/faorigami" target="_blank">FAorigamiのプロフィール</a>
+  </div>
+<br>
+<h2>
     <div class="link-container">
       ・マイクラ統合版
       <div class="link-options">
@@ -60,11 +84,25 @@
         <a href="https://faorigami21.github.io/FAorigami_site/ドット絵作成ツールサイトforFAorigami.html">ドット絵作成ツールサイトforFAorigami</a>
       </div>
     </div>
-  </h2>
-    <div>
-        <p><注意事項></p>
-        <p>このサイトまたはサブページのコマンドを実行、参考、引用、利用などする前に、必ず<a href="https://faorigami21.github.io/FAorigami_site/マイクラコマンドお助けサイトの利用規約">[マイクラコマンドお助けサイトの利用規約へのリンク]</a>をご確認いただき、同意の上でご利用ください。当サイトで提供しているコマンドの利用は、全てお客様ご自身の責任において行ってください。いかなる損害が発生した場合でも、当サイトは一切の責任を負いかねます。また、コマンドの動作保証は致しかねますので、あらかじめご了承ください。コマンドの内容や提供方法は、予告なく変更または停止される場合があります。</p>
-        <p>このサイトまたはサブページでダウンロードを行う前に、必ず<a href="https://faorigami21.github.io/FAorigami_site/FAorigamiのファイルダウンロード利用規約">[FAorigamiのファイルダウンロード利用規約へのリンク]</a>をご確認いただき、同意の上でご利用ください。当サイトで提供しているファイルの利用は、全てお客様ご自身の責任において行ってください。いかなる損害が発生した場合でも、当サイトは一切の責任を負いかねます。また、ファイルの動作保証は致しかねますので、あらかじめご了承ください。ファイルの内容や提供方法は、予告なく変更または停止される場合があります。</p>
-      <p>このサイトまたはサブページでダウンロード、ツールの使用を行う前に、必ず<a href="https://faorigami21.github.io/FAorigami_site/ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項.html">[ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項へのリンク]</a>をご確認いただき、同意の上でご利用ください。当サイトで提供しているファイル、ツールの利用は、全てお客様ご自身の責任において行ってください。いかなる損害が発生した場合でも、当サイトは一切の責任を負いかねます。また、ファイル、ツールの動作保証は致しかねますので、あらかじめご了承ください。ファイル、ツールの内容や提供方法は、予告なく変更または停止される場合があります。</p>
+</h2>
+
+<button id="toggleNotesBtn">注意事項を表示/非表示</button>
+
+<div id="notes-content">
+  <p>このサイトまたはサブページのコマンドを実行、参考、引用、利用などする前に、必ず<a href="https://faorigami21.github.io/FAorigami_site/マイクラコマンドお助けサイトの利用規約">[マイクラコマンドお助けサイトの利用規約へのリンク]</a>をご確認いただき、同意の上でご利用ください。当サイトで提供しているコマンドの利用は、全てお客様ご自身の責任において行ってください。いかなる損害が発生した場合でも、当サイトは一切の責任を負いかねます。また、コマンドの動作保証は致しかねますので、あらかじめご了承ください。コマンドの内容や提供方法は、予告なく変更または停止される場合があります。</p>
+  <p>このサイトまたはサブページでダウンロードを行う前に、必ず<a href="https://faorigami21.github.io/FAorigami_site/FAorigamiのファイルダウンロード利用規約">[FAorigamiのファイルダウンロード利用規約へのリンク]</a>をご確認いただき、同意の上でご利用ください。当サイトで提供しているファイルの利用は、全てお客様ご自身の責任において行ってください。いかなる損害が発生した場合でも、当サイトは一切の責任を負いかねます。また、ファイルの動作保証は致しかねますので、あらかじめご了承ください。ファイルの内容や提供方法は、予告なく変更または停止される場合があります。</p>
+  <p>このサイトまたはサブページでダウンロード、ツールの使用を行う前に、必ず<a href="https://faorigami21.github.io/FAorigami_site/ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項.html">[ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項へのリンク]</a>をご確認いただき、同意の上でご利用ください。当サイトで提供しているファイル、ツールの利用は、全てお客様ご自身の責任において行ってください。いかなる損害が発生した場合でも、当サイトは一切の責任を負いかねます。また、ファイル、ツールの動作保証は致しかねますので、あらかじめご了承ください。ファイル、ツールの内容や提供方法は、予告なく変更または停止される場合があります。</p>
+</div>
+<script>
+document.getElementById('toggleNotesBtn').addEventListener('click', function() {
+  var notesContent = document.getElementById('notes-content');
+  if (notesContent.style.display === 'none' || notesContent.style.display === '') {
+    notesContent.style.display = 'block'; // 表示
+  } else {
+    notesContent.style.display = 'none'; // 非表示
+  }
+});
+</script>
+
 </body>
 </html>
