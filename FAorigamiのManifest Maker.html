@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manifest Maker</title>
+</head>
+
+<body>
+    <style>
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        #version1 {
+            width: 10px;
+        }
+
+        #version2 {
+            width: 20px;
+        }
+
+        #version3 {
+            width: 30px;
+        }
+
+        #de {
+            width: 500px;
+            height: 100px;
+        }
+
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #image-preview {
+            width: 200px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            margin-top: 20px;
+            box-sizing: border-box;
+            object-fit: contain;
+            background-color: #f0f0f0;
+        }
+
+        #image-preview.has-image {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+
+        #image-preview.no-image {
+            display: none;
+        }
+    </style>
+
+    <p>
+        <button onclick="Make()">作成</button><br>
+        作成者名:<input id="name"><br>
+        バージョン:<input type="number" id="version1">.<input type="number" id="version2">.<input type="number" id="version3"><br>
+        パッケージ名:<input id="packname"><br>
+        <input type="file" id="image-selector" accept="image/*"><br>
+        <img id="image-preview" src="#" alt="選択された画像"><br>
+        説明:<br><textarea id="de"></textarea>
+    </p>
+
+    <script>
+        // HTML要素を取得
+        const imageSelector = document.getElementById('image-selector');
+        const imagePreview = document.getElementById('image-preview');
+
+        // ファイルが選択されたときのイベントを監視
+        imageSelector.addEventListener('change', function (event) {
+            const file = event.target.files?.[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 200;
+                        canvas.height = 200;
+                        ctx.drawImage(img, 0, 0, 200, 200);
+                        imagePreview.src = canvas.toDataURL('image/png'); // 画像をPNGとして取得
+                        imagePreview.classList.add('has-image');
+                        imagePreview.classList.remove('no-image');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.src = "#";
+                imagePreview.classList.remove('has-image');
+                imagePreview.classList.add('no-image');
+            }
+        });
+
+        function generateUUID() {
+            let uuid = "";
+            const r = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
+            for (let i = 0; i < 32; i++) {
+                uuid += r?.[Math.floor(Math.random() * r.length)];
+                if ((i + 1) === 8 || (i + 1) === 12 || (i + 1) === 16 || (i + 1) === 20) {
+                    uuid += "-";
+                }
+            }
+            return uuid;
+        }
+
+        function Make() {
+            const name = document.getElementById('name').value;
+            const de = document.getElementById('de').value;
+            const packname = document.getElementById('packname').value;
+            const version1 = document.getElementById('version1').value;
+            const version2 = document.getElementById('version2').value;
+            const version3 = document.getElementById('version3').value;
+
+            if (name === "" || de === "" || packname === "" || version1 === "" || version2 === "" || version3 === "") {
+                return;
+            }
+
+            const version = version1 + '.' + version2 + '.' + version3;
+
+            const uuid1 = generateUUID();
+            const uuid2 = generateUUID();
+            const uuid3 = generateUUID();
+
+            const manifestData = `{
+"format_version": 2,
+"metadata": {
+"authors": [
+"${name}"
+]
+},
+"header": {
+"description": "${de}",
+"name": "${packname}",
+"uuid": "${uuid1}",
+"version": [ 0, 0, 1 ],
+"min_engine_version": [ ${version} ]
+},
+"modules": [
+{
+"description": "Example vanilla behavior pack",
+"type": "data",
+"uuid": "${uuid2}",
+"version": [0, 0, 1]
+}
+],
+"dependencies": [
+{
+"uuid": "${uuid3}",
+"version": [0, 0, 1]
+}
+]
+}`;
+
+            const manifestBlob = new Blob([manifestData], { type: 'text/plain' });
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            const manifestLink = document.createElement('a');
+            manifestLink.href = manifestUrl;
+            manifestLink.download = 'manifest.json';
+
+            // manifest.jsonのダウンロードをトリガー
+            document.body.appendChild(manifestLink);
+            manifestLink.click();
+            document.body.removeChild(manifestLink);
+            URL.revokeObjectURL(manifestUrl);
+
+            // 画像が選択されていれば、画像もダウンロード
+            if (imageSelector.files?.[0]) {
+                const imgDataUrl = imagePreview.src;
+                const base64Data = imgDataUrl.split(',')[1];
+                const imageBlob = new Blob([atob(base64Data)], { type: 'image/png' });
+                const imageUrl = URL.createObjectURL(imageBlob);
+                const imageLink = document.createElement('a');
+                imageLink.href = imageUrl;
+                imageLink.download = 'pack_icon.png';
+                document.body.appendChild(imageLink);
+                imageLink.click();
+                document.body.removeChild(imageLink);
+                URL.revokeObjectURL(imageUrl);
+            }
+        }
+    </script>
+    <p>※本サイトはマインクラフトのファンサイトです。</p>
+</body>
+
+</html>
