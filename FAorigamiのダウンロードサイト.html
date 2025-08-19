@@ -51,8 +51,8 @@
         const bridgeWorldLink = document.getElementById('bridgeWorldLink');
         const plantAddonLink = document.getElementById('plantAddonLink');
         const skipInitLink = document.getElementById('skipInitLink');
-        const skipInitLink = document.getElementById('aLink');
-        const links = [bridgeWorldLink, plantAddonLink, skipInitLink]; // 制御したいリンクを配列に追加
+        const aLink = document.getElementById('aLink');
+        const links = [bridgeWorldLink, plantAddonLink, skipInitLink, aLink]; // 制御したいリンクを配列に追加
 
         agreementCheck.addEventListener('change', function() {
             links.forEach(link => {
