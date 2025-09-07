@@ -121,12 +121,12 @@
             position: absolute;
             bottom: 0px;
             display: flex;
-            flex-direction: row; /* <-- ここをrowに変更 */
+            flex-direction: row;
             gap: 10px;
         }
 
         #generateButton,
-        #termsLink { /* <-- ここに#termsLinkを追加 */
+        #termsLink {
             padding: 10px 20px;
             background-color: #00aaff;
             color: white;
@@ -134,8 +134,8 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            text-decoration: none; /* <-- リンクの下線を消す */
-            display: inline-block; /* <-- ボタンと高さを揃えるため */
+            text-decoration: none;
+            display: inline-block;
         }
 
         .property-panel {
@@ -231,7 +231,7 @@
         const contextMenu = document.getElementById('context-menu');
         const contextSelect = document.getElementById('context-select');
         const contextDelete = document.getElementById('context-delete');
-        const termsLink = document.getElementById('termsLink'); // 新しいリンク要素を取得
+        const termsLink = document.getElementById('termsLink');
 
         let isDragging = false;
         let isResizing = false;
@@ -243,8 +243,7 @@
         let relativeX, relativeY;
         let itemWidth, itemHeight;
         let canvasTitle = "App";
-
-        // ツールボックスからのドラッグ＆ドロップ
+        
         toolbox.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', e.target.dataset.type);
             relativeX = e.offsetX;
@@ -310,7 +309,6 @@
             }
         });
 
-        // ツールボックス、プロパティパネル、キャンバス外をクリックしたときに選択を解除
         document.body.addEventListener('click', (e) => {
             contextMenu.style.display = 'none';
 
@@ -318,25 +316,20 @@
             const clickedPanel = e.target.closest('.toolbox, .property-panel');
 
             if (clickedDraggable) {
-                // ドラッグ可能な要素がクリックされた場合は、その要素を選択
                 selectElement(clickedDraggable);
             } else if (e.target === canvasContainer) {
-                // キャンバスの何もない部分がクリックされたらキャンバスのプロパティを表示
                 selectCanvas();
             } else if (!clickedPanel && activeElement) {
-                // その他の場所がクリックされたら選択を解除
                 deselectElement();
             }
         });
 
-        // キャンバスを選択状態にする関数
         function selectCanvas() {
             deselectElement();
             activeElement = canvasContainer;
             updatePropertyPanelForCanvas();
         }
 
-        // 要素を選択状態にする関数
         function selectElement(element) {
             if (activeElement) {
                 activeElement.classList.remove('active');
@@ -355,7 +348,6 @@
             updatePropertyPanel(element);
         }
 
-        // 選択を解除する関数
         function deselectElement() {
             if (activeElement) {
                 activeElement.classList.remove('active');
@@ -366,7 +358,6 @@
             clearPropertyPanel();
         }
 
-        // プロパティパネルを更新する関数
         function updatePropertyPanel(element) {
             clearPropertyPanel();
             const type = element.dataset.itemType;
@@ -432,8 +423,7 @@
                 element.style.top = `${e.target.value}px`;
             });
         }
-
-        // キャンバスのプロパティを更新する関数
+        
         function updatePropertyPanelForCanvas() {
             clearPropertyPanel();
             propertyPanel.innerHTML = `<h3>フォームプロパティ</h3>`;
@@ -468,14 +458,10 @@
             });
         }
 
-
-        // プロパティパネルをクリアする関数
         function clearPropertyPanel() {
             propertyPanel.innerHTML = `<h3>プロパティ</h3><p>要素を選択してください</p>`;
         }
 
-
-        // --- 要素のドラッグ＆リサイズ処理 ---
         function startDrag(e) {
             e.stopPropagation();
             isDragging = true;
@@ -493,7 +479,6 @@
             resizeHandle = e.target;
         }
 
-        // --- キャンバスのリサイズ処理 ---
         canvasResizeHandle.addEventListener('mousedown', (e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -554,7 +539,6 @@
             resizeHandle = null;
         });
 
-        // コンテキストメニューと通常クリックのイベントリスナー
         canvasContainer.addEventListener('contextmenu', (e) => {
             const targetElement = e.target.closest('.draggable');
             if (targetElement) {
@@ -569,7 +553,6 @@
             }
         });
 
-        // 「選択」オプションのクリック
         contextSelect.addEventListener('click', (e) => {
             e.stopPropagation();
             if (activeElement) {
@@ -577,7 +560,6 @@
             }
         });
 
-        // 「削除」オプションのクリック
         contextDelete.addEventListener('click', (e) => {
             e.stopPropagation();
             if (activeElement) {
@@ -587,7 +569,6 @@
             }
         });
 
-        // 新しい機能：フォーム生成ボタン
         generateButton.addEventListener('click', () => {
             const elements = canvasContainer.querySelectorAll('.draggable');
             const data = [];
@@ -634,9 +615,9 @@
 
         // 「規約」リンクのクリックイベント
         termsLink.addEventListener('click', (e) => {
-            e.preventDefault(); // デフォルトのアンカーリンクの動作を無効化
+            e.preventDefault();
             alert("利用規約ページに移動します。（現在はアラートのみ）");
-            window.location.href = "./pynosakuseinoriyoukiyaku.html";
+            window.location.href = "./pythonnoformsakuseinoriyoukiyaku.html";
         });
 
 
@@ -667,5 +648,6 @@
         }
     </script>
 </body>
+
 
 </html>
