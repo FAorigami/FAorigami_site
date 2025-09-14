@@ -19,6 +19,29 @@
             gap: 20px;
         }
 
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #showCodeButton {
+            padding: 10px 20px;
+            background-color: #00aaff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 200px;
+            text-align: center;
+        }
+        
+        #showCodeButton:hover {
+            background-color: #0088cc;
+        }
+
         .toolbox {
             width: 200px;
             height: 80vh;
@@ -164,7 +187,8 @@
         }
 
         .property-group input,
-        .property-group select {
+        .property-group select,
+        .property-group textarea {
             padding: 8px;
             border-radius: 5px;
             border: 1px solid #666;
@@ -193,15 +217,187 @@
         .context-menu-item:hover {
             background-color: #00aaff;
         }
+
+        /* Toggle switch styling */
+        .toggle-switch-group {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #00aaff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #333;
+            padding: 20px;
+            border: 2px solid #555;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 700px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .modal-close-button {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 5px;
+            background: transparent;
+            border: none;
+        }
+        
+        .modal-save-button {
+            padding: 10px 20px;
+            background-color: #00aaff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .modal-content textarea {
+            width: 100%;
+            height: 300px;
+            background-color: #222;
+            color: white;
+            border: 1px solid #666;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            resize: vertical;
+        }
+
+        /* Checkbox styling */
+        .custom-checkbox {
+            position: relative;
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background-color: #555;
+            border: 1px solid #888;
+            /* ドラッグ操作を無効化 */
+            pointer-events: none;
+        }
+        
+        .custom-checkbox:after {
+            content: '';
+            position: absolute;
+            display: none;
+            left: 5px;
+            top: 1px;
+            width: 6px;
+            height: 12px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg);
+        }
+
+        .custom-checkbox.checked:after {
+            display: block;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            cursor: move;
+        }
+        
+        .checkbox-container > span {
+            /* 文字部分のドラッグ操作を無効化 */
+            pointer-events: none;
+        }
+
     </style>
 </head>
 
 <body>
-    <div class="toolbox">
-        <div class="tool-item" draggable="true" data-type="button">ボタン</div>
-        <div class="tool-item" draggable="true" data-type="textbox">テキストボックス</div>
-        <div class="tool-item" draggable="true" data-type="text">テキスト</div>
+    <div class="left-panel">
+        <button id="showCodeButton">コードを表示</button>
+        <div class="toolbox">
+            <div class="tool-item" draggable="true" data-type="button">ボタン</div>
+            <div class="tool-item" draggable="true" data-type="textbox">テキストボックス</div>
+            <div class="tool-item" draggable="true" data-type="text">テキスト</div>
+            <div class="tool-item" draggable="true" data-type="checkbox">チェックボックス</div>
+        </div>
     </div>
+
 
     <div class="canvas-container">
         <div class="canvas-resize-handle bottom-right"></div>
@@ -214,12 +410,26 @@
 
     <div class="control-panel">
         <button id="generateButton">フォーム生成</button>
-        <a href="#利用規約" id="termsLink">利用規約</a>
+        <a href="https://faorigami.github.io/FAorigami_site/pythonnoformsakuseinoriyoukiyaku.html" id="termsLink">利用規約</a>
     </div>
 
     <div id="context-menu">
         <div class="context-menu-item" id="context-select">選択</div>
         <div class="context-menu-item" id="context-delete">削除</div>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay">
+        <div id="codeModal" class="modal-content">
+            <div class="modal-header">
+                <h2>編集可能なコード</h2>
+                <div class="modal-buttons">
+                    <button id="saveCodeButton" class="modal-save-button">コードを保存</button>
+                    <button class="modal-close-button">&times;</button>
+                </div>
+            </div>
+            <p>※ここに記述したコードがフォーム生成時に追加されます。</p>
+            <textarea id="codeDisplayArea" placeholder="# ここにカスタム関数やイベント処理を記述してください"></textarea>
+        </div>
     </div>
 
     <script>
@@ -232,6 +442,11 @@
         const contextSelect = document.getElementById('context-select');
         const contextDelete = document.getElementById('context-delete');
         const termsLink = document.getElementById('termsLink');
+        const showCodeButton = document.getElementById('showCodeButton');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalCloseButton = document.querySelector('.modal-close-button');
+        const codeDisplayArea = document.getElementById('codeDisplayArea');
+        const saveCodeButton = document.getElementById('saveCodeButton');
 
         let isDragging = false;
         let isResizing = false;
@@ -243,7 +458,21 @@
         let relativeX, relativeY;
         let itemWidth, itemHeight;
         let canvasTitle = "App";
+        let canvasBgColor = "#222222";
+        let fileExtension = ".pyw"; // デフォルトの拡張子を設定
+
+        // ローカルストレージからコードを読み込む
+        function loadCodeFromLocalStorage() {
+            const savedCode = localStorage.getItem('userCode');
+            if (savedCode) {
+                codeDisplayArea.value = savedCode;
+            }
+        }
         
+        // ページ読み込み時にコードをロード
+        window.addEventListener('load', loadCodeFromLocalStorage);
+
+
         toolbox.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', e.target.dataset.type);
             relativeX = e.offsetX;
@@ -266,14 +495,30 @@
             if (type === 'button') {
                 newElement = document.createElement('button');
                 newElement.textContent = `ボタン #${itemNumber}`;
+                newElement.setAttribute('data-has-event', 'true');
+                newElement.setAttribute('data-event-code', '');
+                newElement.style.color = 'white';
+                newElement.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    selectElement(e.target);
+                    const propPanel = document.querySelector('.property-panel');
+                    const eventToggle = propPanel.querySelector('#prop-event-toggle');
+                    const eventCodeArea = propPanel.querySelector('#prop-event-code');
+                    if (eventToggle && eventCodeArea) {
+                        eventToggle.checked = true;
+                        eventCodeArea.value = e.target.dataset.eventCode;
+                    }
+                });
             } else if (type === 'textbox') {
                 newElement = document.createElement('input');
                 newElement.type = 'text';
                 newElement.placeholder = `テキストボックス #${itemNumber}`;
+                newElement.style.color = 'white';
             } else if (type === 'text') {
                 newElement = document.createElement('p');
                 newElement.textContent = `テキスト #${itemNumber}`;
                 newElement.style.userSelect = 'none';
+                newElement.style.color = 'white';
 
                 newElement.addEventListener('dblclick', (e) => {
                     e.target.setAttribute('contenteditable', 'true');
@@ -282,6 +527,24 @@
                 newElement.addEventListener('blur', (e) => {
                     e.target.removeAttribute('contenteditable');
                 });
+            } else if (type === 'checkbox') {
+                const container = document.createElement('div');
+                container.classList.add('checkbox-container');
+                container.style.userSelect = 'none';
+                container.setAttribute('data-item-type', type);
+                container.setAttribute('data-checked', 'false');
+                container.style.color = 'white';
+
+                const customCheckbox = document.createElement('div');
+                customCheckbox.classList.add('custom-checkbox');
+
+                const label = document.createElement('span');
+                label.textContent = `チェックボックス #${itemNumber}`;
+
+                container.appendChild(customCheckbox);
+                container.appendChild(label);
+                
+                newElement = container;
             }
 
             if (newElement) {
@@ -299,9 +562,10 @@
                 canvasContainer.appendChild(newElement);
 
                 newElement.addEventListener('mousedown', (e) => {
+                    // クリックされた要素がリサイズハンドルか、または子要素かを確認
                     if (e.target.classList.contains('item-resize-handle')) {
                         startResize(e);
-                    } else {
+                    } else if (e.target.closest('.draggable')) {
                         startDrag(e);
                     }
                 });
@@ -313,7 +577,7 @@
             contextMenu.style.display = 'none';
 
             const clickedDraggable = e.target.closest('.draggable');
-            const clickedPanel = e.target.closest('.toolbox, .property-panel');
+            const clickedPanel = e.target.closest('.toolbox, .property-panel, .modal-content');
 
             if (clickedDraggable) {
                 selectElement(clickedDraggable);
@@ -365,20 +629,96 @@
 
             propertyPanel.innerHTML = `<h3>プロパティ</h3>`;
 
-            const textGroup = document.createElement('div');
-            textGroup.classList.add('property-group');
-            if (type === 'textbox') {
-                textGroup.innerHTML = `<label for="prop-text">プレースホルダー</label><input type="text" id="prop-text" value="${element.placeholder}">`;
+            if (type === 'checkbox') {
+                const textGroup = document.createElement('div');
+                textGroup.classList.add('property-group');
+                const labelElement = element.querySelector('span');
+                textGroup.innerHTML = `<label for="prop-text">テキスト</label><input type="text" id="prop-text" value="${labelElement.textContent}">`;
+                propertyPanel.appendChild(textGroup);
+                textGroup.querySelector('input').addEventListener('input', (e) => {
+                    labelElement.textContent = e.target.value;
+                });
             } else {
-                textGroup.innerHTML = `<label for="prop-text">テキスト</label><input type="text" id="prop-text" value="${element.textContent}">`;
-            }
-            propertyPanel.appendChild(textGroup);
-            textGroup.querySelector('input').addEventListener('input', (e) => {
+                const textGroup = document.createElement('div');
+                textGroup.classList.add('property-group');
                 if (type === 'textbox') {
-                    element.placeholder = e.target.value;
+                    textGroup.innerHTML = `<label for="prop-text">プレースホルダー</label><input type="text" id="prop-text" value="${element.placeholder}">`;
                 } else {
-                    element.textContent = e.target.value;
+                    textGroup.innerHTML = `<label for="prop-text">テキスト</label><input type="text" id="prop-text" value="${element.textContent}">`;
                 }
+                propertyPanel.appendChild(textGroup);
+                textGroup.querySelector('input').addEventListener('input', (e) => {
+                    if (type === 'textbox') {
+                        element.placeholder = e.target.value;
+                    } else {
+                        element.textContent = e.target.value;
+                    }
+                });
+            }
+
+            if (type === 'button') {
+                const eventGroup = document.createElement('div');
+                eventGroup.classList.add('property-group');
+                eventGroup.innerHTML = `
+                    <label>イベント</label>
+                    <div class="toggle-switch-group">
+                        <span>イベントを有効にする</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="prop-event-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <label for="prop-event-code">イベントコード</label>
+                    <textarea id="prop-event-code" rows="5" placeholder="Pythonコードを入力してください"></textarea>
+                `;
+                propertyPanel.appendChild(eventGroup);
+                const eventToggle = eventGroup.querySelector('#prop-event-toggle');
+                const eventCodeArea = eventGroup.querySelector('#prop-event-code');
+                eventToggle.checked = element.dataset.hasEvent === 'true';
+                eventCodeArea.value = element.dataset.eventCode || '';
+
+                eventCodeArea.style.display = eventToggle.checked ? 'block' : 'none';
+
+                eventToggle.addEventListener('change', (e) => {
+                    element.setAttribute('data-has-event', e.target.checked);
+                    eventCodeArea.style.display = e.target.checked ? 'block' : 'none';
+                });
+                eventCodeArea.addEventListener('input', (e) => {
+                    element.setAttribute('data-event-code', e.target.value);
+                });
+            }
+
+            if (type === 'checkbox') {
+                const checkedGroup = document.createElement('div');
+                checkedGroup.classList.add('property-group');
+                checkedGroup.innerHTML = `
+                    <label>チェック状態</label>
+                    <div class="toggle-switch-group">
+                        <span>Checked</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="prop-checked-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `;
+                propertyPanel.appendChild(checkedGroup);
+                const checkedToggle = checkedGroup.querySelector('#prop-checked-toggle');
+                const checkboxElement = element.querySelector('.custom-checkbox');
+                checkedToggle.checked = element.dataset.checked === 'true';
+                
+                checkedToggle.addEventListener('change', (e) => {
+                    element.setAttribute('data-checked', e.target.checked);
+                    checkboxElement.classList.toggle('checked', e.target.checked);
+                });
+            }
+            
+            // フォントカラーのプロパティを追加
+            const fontColorGroup = document.createElement('div');
+            fontColorGroup.classList.add('property-group');
+            fontColorGroup.innerHTML = `<label for="prop-font-color">フォントカラー</label><input type="color" id="prop-font-color" value="${rgbToHex(computedStyle.color)}">`;
+            propertyPanel.appendChild(fontColorGroup);
+            fontColorGroup.querySelector('input').addEventListener('input', (e) => {
+                element.style.color = e.target.value;
             });
 
             const sizeGroup = document.createElement('div');
@@ -437,6 +777,16 @@
                 canvasTitle = e.target.value;
             });
 
+            // フォームの背景色プロパティを追加
+            const bgColorGroup = document.createElement('div');
+            bgColorGroup.classList.add('property-group');
+            bgColorGroup.innerHTML = `<label for="prop-bg-color">背景色</label><input type="color" id="prop-bg-color" value="${rgbToHex(window.getComputedStyle(canvasContainer).backgroundColor)}">`;
+            propertyPanel.appendChild(bgColorGroup);
+            bgColorGroup.querySelector('input').addEventListener('input', (e) => {
+                canvasBgColor = e.target.value;
+                canvasContainer.style.backgroundColor = canvasBgColor;
+            });
+
             const sizeGroup = document.createElement('div');
             sizeGroup.classList.add('property-group');
             sizeGroup.innerHTML = `
@@ -456,6 +806,21 @@
                 const newHeight = Math.max(200, e.target.value);
                 canvasContainer.style.height = `${newHeight}px`;
             });
+
+            // 拡張子選択ドロップダウンを追加
+            const extensionGroup = document.createElement('div');
+            extensionGroup.classList.add('property-group');
+            extensionGroup.innerHTML = `
+                <label for="prop-extension">拡張子</label>
+                <select id="prop-extension">
+                    <option value=".pyw" ${fileExtension === ".pyw" ? "selected" : ""}>.pyw</option>
+                    <option value=".py" ${fileExtension === ".py" ? "selected" : ""}>.py</option>
+                </select>
+            `;
+            propertyPanel.appendChild(extensionGroup);
+            extensionGroup.querySelector('#prop-extension').addEventListener('change', (e) => {
+                fileExtension = e.target.value;
+            });
         }
 
         function clearPropertyPanel() {
@@ -465,11 +830,14 @@
         function startDrag(e) {
             e.stopPropagation();
             isDragging = true;
-            selectElement(e.target);
-
-            const rect = activeElement.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
+            // 親要素が.draggableを持っているか確認
+            const targetElement = e.target.closest('.draggable');
+            if (targetElement) {
+                selectElement(targetElement);
+                const rect = targetElement.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+            }
         }
 
         function startResize(e) {
@@ -568,11 +936,11 @@
                 contextMenu.style.display = 'none';
             }
         });
-
-        generateButton.addEventListener('click', () => {
+        
+        // Modal Events
+        showCodeButton.addEventListener('click', () => {
             const elements = canvasContainer.querySelectorAll('.draggable');
             const data = [];
-            let counts = 0;
             elements.forEach(el => {
                 const computedStyle = window.getComputedStyle(el);
                 const itemType = el.dataset.itemType;
@@ -581,6 +949,8 @@
                     content = el.placeholder;
                 } else if (itemType === 'button' || itemType === 'text') {
                     content = el.textContent;
+                } else if (itemType === 'checkbox') {
+                    content = el.querySelector('span').textContent;
                 }
                 const elementData = [
                     itemType,
@@ -589,28 +959,116 @@
                     el.offsetHeight,
                     el.offsetLeft,
                     el.offsetTop,
-                    computedStyle.fontSize
+                    computedStyle.fontSize,
+                    computedStyle.color,
+                    el.dataset.hasEvent,
+                    el.dataset.eventCode,
+                    el.dataset.checked
                 ];
-                data[counts] = elementData;
-                counts++;
+                data.push(elementData);
             });
+            
+            // 編集可能なコード（イベント関数部分）のみを抽出
+            let eventFunctions = "";
+            let count = [1, 1, 1, 1]; // text, textbox, button, checkbox
+            for (let i = 0; i < data.length; i++) {
+                if (data[i][0] === "button" && data[i][8] === 'true') {
+                    const eventCode = data[i][9] && data[i][9].trim() !== '' ? data[i][9] : `# ここにボタン${count[2]}の処理を記述\n    pass`;
+                    eventFunctions += `\n# ボタン${count[2]}のクリックイベント\ndef button${count[2]}_click():\n    ${eventCode.split('\n').join('\n    ')}\n\n`;
+                }
+                if (data[i][0] === "text") count[0]++;
+                if (data[i][0] === "textbox") count[1]++;
+                if (data[i][0] === "button") count[2]++;
+                if (data[i][0] === "checkbox") count[3]++;
+            }
+            
+            // ローカルストレージに保存されているユーザーコードを読み込む
+            const savedUserCode = localStorage.getItem('userCode') || '';
+            
+            // 生成されたイベント関数と保存されたユーザーコードを結合して表示
+            codeDisplayArea.value = eventFunctions + savedUserCode;
+            modalOverlay.style.display = 'flex';
+        });
 
-            let texts = "";
-            texts = Maker(data);
-            const blob = new Blob([texts], {
-                type: "text/plain"
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = canvasTitle + ".pyw";
-            a.click();
-            URL.revokeObjectURL(url);
+        modalCloseButton.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+        
+        // Tabキーを4つのスペースに変換
+        codeDisplayArea.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+
+                // 4つのスペースを挿入
+                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+
+                // カーソルを新しい位置に移動
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        saveCodeButton.addEventListener('click', () => {
+            const currentCode = codeDisplayArea.value;
+            const lines = currentCode.split('\n');
+            const newCodeLines = [];
+            const seenFunctions = new Set();
+            let i = 0;
+
+            while (i < lines.length) {
+                const currentLine = lines[i];
+                const buttonFunctionMatch = currentLine.match(/def (button\d+_click\(\)):/);
+                const commentMatch = currentLine.match(/^\s*# ボタン\d+のクリックイベント$/);
+
+                if (buttonFunctionMatch) {
+                    const functionName = buttonFunctionMatch[1];
+                    // 関数名が重複しているか確認
+                    if (seenFunctions.has(functionName)) {
+                        // 重複する関数のブロックをスキップ
+                        while (i < lines.length && (lines[i].trim() !== '' || (lines[i].trim() === '' && lines[i+1] && !lines[i+1].startsWith('def')))) {
+                            i++;
+                        }
+                    } else {
+                        seenFunctions.add(functionName);
+                        // コメント行があれば追加
+                        if (commentMatch) {
+                            newCodeLines.push(currentLine);
+                            i++;
+                        }
+                        // 関数本体を追加
+                        while (i < lines.length && lines[i].trim() !== '' && !lines[i].startsWith('def button')) {
+                            newCodeLines.push(lines[i]);
+                            i++;
+                        }
+                    }
+                } else {
+                    newCodeLines.push(currentLine);
+                    i++;
+                }
+            }
+
+            let userCode = newCodeLines.join('\n');
+            const buttonFunctionRegex = /^\s*(# ボタン\d+のクリックイベント)?\s*def button\d+_click\(\):\n(?:    .*\n)*\n/gm;
+            const tempCode = userCode;
+            const matches = tempCode.match(buttonFunctionRegex);
+            
+            if (matches) {
+                userCode = tempCode.replace(buttonFunctionRegex, '');
+                const uniqueFunctions = Array.from(new Set(matches.map(f => f.trim())));
+                userCode = uniqueFunctions.join('\n') + '\n' + userCode;
+            }
+
+            userCode = userCode.split('\n').filter(line => line.trim() !== '').join('\n');
+            
+            // ローカルストレージに保存
+            localStorage.setItem('userCode', userCode);
+            
+            modalOverlay.style.display = 'none';
         });
 
         window.addEventListener('beforeunload', (event) => {
-            event.preventDefault();
-            event.returnValue = '';
+            localStorage.removeItem('userCode');
         });
 
         termsLink.addEventListener('click', (e) => {
@@ -619,39 +1077,124 @@
             window.location.href = "https://faorigami.github.io/FAorigami_site/pythonnoformsakuseinoriyoukiyaku.html";
         });
 
+        generateButton.addEventListener('click', () => {
+            const elements = canvasContainer.querySelectorAll('.draggable');
+            const data = [];
+            elements.forEach(el => {
+                const computedStyle = window.getComputedStyle(el);
+                const itemType = el.dataset.itemType;
+                let content;
+                if (itemType === 'textbox') {
+                    content = el.placeholder;
+                } else if (itemType === 'button' || itemType === 'text') {
+                    content = el.textContent;
+                } else if (itemType === 'checkbox') {
+                    content = el.querySelector('span').textContent;
+                }
+                const elementData = [
+                    itemType,
+                    content,
+                    el.offsetWidth,
+                    el.offsetHeight,
+                    el.offsetLeft,
+                    el.offsetTop,
+                    computedStyle.fontSize,
+                    computedStyle.color,
+                    el.dataset.hasEvent,
+                    el.dataset.eventCode,
+                    el.dataset.checked
+                ];
+                data.push(elementData);
+            });
 
-        function Maker(e) {
+            // ローカルストレージからユーザーコードを読み込んでMakerに渡す
+            const userCode = localStorage.getItem('userCode') || '';
+            const finalCode = Maker(data, userCode);
+            
+            const blob = new Blob([finalCode], {
+                type: "text/plain"
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = canvasTitle + fileExtension; // 選択された拡張子を使用
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // RGBをHEXに変換するヘルパー関数
+        function rgbToHex(rgb) {
+            if (!rgb || rgb.startsWith('rgba(0, 0, 0, 0)')) return '#000000'; // 透明な色の場合、黒を返す
+            const hexMatch = rgb.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+            if (hexMatch) return hexMatch[0];
+
+            const rgbMatch = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (!rgbMatch) return '#000000'; // マッチしない場合は黒を返す
+
+            return "#" +
+                ("0" + parseInt(rgbMatch[1], 10).toString(16)).slice(-2) +
+                ("0" + parseInt(rgbMatch[2], 10).toString(16)).slice(-2) +
+                ("0" + parseInt(rgbMatch[3], 10).toString(16)).slice(-2);
+        }
+
+
+        function Maker(e, userCode) {
             const element_f = document.querySelector('.canvas-container');
             const width_f = element_f.offsetWidth;
             const height_f = element_f.offsetHeight;
             const title_f = canvasTitle;
-            const text1 = `import tkinter as tk\n\n# ウィンドウの作成\nroot = tk.Tk()\nroot.title(\"${title_f}\")\nroot.geometry(\"${width_f}x${height_f}\")\n`;
-            let text2 = "";
-            let count = [1, 1, 1];
+            const bgColor_f = canvasBgColor;
+
+            // 初期設定コード
+            const initialCode = `import tkinter as tk\n\n# ウィンドウの作成\nroot = tk.Tk()\nroot.title(\"${title_f}\")\nroot.geometry(\"${width_f}x${height_f}\")\nroot.configure(bg='${bgColor_f}')\n\n`;
+
+            // 変数宣言コード
+            let varCode = "";
+            let eventFunctions = "";
+            let count = [1, 1, 1, 1]; // text, textbox, button, checkbox
+            for (let i = 0; i < e.length; i++) {
+                if (e[i][0] === "button" && e[i][8] === 'true') {
+                    const eventCode = e[i][9] && e[i][9].trim() !== '' ? e[i][9] : `# ここにボタン${count[2]}の処理を記述\n    pass`;
+                    eventFunctions += `\n# ボタン${count[2]}のクリックイベント\ndef button${count[2]}_click():\n    ${eventCode.split('\n').join('\n    ')}\n\n`;
+                }
+                if (e[i][0] === "checkbox") {
+                    varCode += `var_checkbox${count[3]} = tk.BooleanVar(value=${e[i][10]})\n`;
+                }
+                if (e[i][0] === "text") count[0]++;
+                if (e[i][0] === "textbox") count[1]++;
+                if (e[i][0] === "button") count[2]++;
+                if (e[i][0] === "checkbox") count[3]++;
+            }
+
+            // ウィジェット作成コード
+            let widgetsCode = "";
+            count = [1, 1, 1, 1];
             for (let i = 0; i < e.length; i++) {
                 e[i][6] = parseInt(e[i][6], 10);
+                const fgColor = `\"${e[i][7]}\"`;
                 if (e[i][0] === "text") {
-                    text2 += `label${count[0]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nlabel${count[0]} = tk.Label(root, text="${e[i][1]}",font=label${count[0]}_font)\nlabel${count[0]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `label${count[0]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nlabel${count[0]} = tk.Label(root, text="${e[i][1]}",font=label${count[0]}_font, fg=${fgColor})\nlabel${count[0]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[0]++;
                 } else if (e[i][0] === "textbox") {
-                    text2 += `entry_font${count[1]} = ("Meiryo UI", ${e[i][6]}, "italic")\nentry_box${count[1]} = tk.Entry(root, font=entry_font${count[1]})\nentry_box${count[1]}\nentry_box${count[1]}.insert(0, "${e[i][1]}")\nentry_box${count[1]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `entry_font${count[1]} = ("Meiryo UI", ${e[i][6]}, "italic")\nentry_box${count[1]} = tk.Entry(root, font=entry_font${count[1]}, fg=${fgColor})\nentry_box${count[1]}.insert(0, "${e[i][1]}")\nentry_box${count[1]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[1]++;
                 } else if (e[i][0] === "button") {
-                    text2 += `button${count[2]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nbutton${count[2]} = tk.Button(root, text="${e[i][1]}",font=button${count[2]}_font)\nbutton${count[2]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    if (e[i][8] === 'true') {
+                        widgetsCode += `button${count[2]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nbutton${count[2]} = tk.Button(root, text="${e[i][1]}",font=button${count[2]}_font, command=button${count[2]}_click, fg=${fgColor})\nbutton${count[2]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    } else {
+                        widgetsCode += `button${count[2]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nbutton${count[2]} = tk.Button(root, text="${e[i][1]}",font=button${count[2]}_font, fg=${fgColor})\nbutton${count[2]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    }
                     count[2]++;
+                } else if (e[i][0] === "checkbox") {
+                    widgetsCode += `checkbox${count[3]} = tk.Checkbutton(root, text="${e[i][1]}", variable=var_checkbox${count[3]}, fg=${fgColor})\ncheckbox${count[3]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    count[3]++;
                 }
             }
-            text2 += "root.mainloop()";
-            const texts = text1 + text2;
-            return texts;
+            widgetsCode += "root.mainloop()";
+
+            return initialCode + varCode + eventFunctions + userCode + widgetsCode;
         }
     </script>
 </body>
 
-
 </html>
-
-
-
-
-
