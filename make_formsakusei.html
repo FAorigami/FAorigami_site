@@ -37,7 +37,7 @@
             width: 200px;
             text-align: center;
         }
-        
+
         #showCodeButton:hover {
             background-color: #0088cc;
         }
@@ -197,7 +197,7 @@
             color: white;
             font-size: 14px;
         }
-        
+
         .property-group textarea {
             white-space: pre;
             overflow-x: auto;
@@ -302,20 +302,20 @@
             display: flex;
             flex-direction: column;
         }
-        
+
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
         }
-        
+
         .modal-buttons {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
         }
-        
+
         .modal-close-button {
             color: white;
             font-size: 24px;
@@ -325,7 +325,7 @@
             background: transparent;
             border: none;
         }
-        
+
         .modal-save-button {
             padding: 10px 20px;
             background-color: #00aaff;
@@ -335,7 +335,7 @@
             cursor: pointer;
             font-size: 16px;
         }
-        
+
         .modal-content textarea {
             width: 100%;
             height: 300px;
@@ -359,7 +359,7 @@
             /* ドラッグ操作を無効化 */
             pointer-events: none;
         }
-        
+
         .custom-checkbox:after {
             content: '';
             position: absolute;
@@ -384,12 +384,11 @@
             font-size: 14px;
             cursor: move;
         }
-        
-        .checkbox-container > span {
+
+        .checkbox-container>span {
             /* 文字部分のドラッグ操作を無効化 */
             pointer-events: none;
         }
-
     </style>
 </head>
 
@@ -467,16 +466,18 @@
         let canvasBgColor = "#ffffff";
         let fileExtension = ".pyw"; // デフォルトの拡張子を設定
 
-        // ローカルストレージからコードを読み込む
-        function loadCodeFromLocalStorage() {
+        // ページ読み込み時にlocalStorageからコードを読み込む
+        window.addEventListener('DOMContentLoaded', () => {
             const savedCode = localStorage.getItem('userCode');
             if (savedCode) {
                 codeDisplayArea.value = savedCode;
             }
-        }
-        
-        // ページ読み込み時にコードをロード
-        window.addEventListener('load', loadCodeFromLocalStorage);
+        });
+
+        // ページを離れるときにlocalStorageをクリアする
+        window.addEventListener('beforeunload', () => {
+            localStorage.removeItem('userCode');
+        });
 
 
         toolbox.addEventListener('dragstart', (e) => {
@@ -542,7 +543,7 @@
 
                 container.appendChild(customCheckbox);
                 container.appendChild(label);
-                
+
                 newElement = container;
             }
 
@@ -715,13 +716,13 @@
                 const checkedToggle = checkedGroup.querySelector('#prop-checked-toggle');
                 const checkboxElement = element.querySelector('.custom-checkbox');
                 checkedToggle.checked = element.dataset.checked === 'true';
-                
+
                 checkedToggle.addEventListener('change', (e) => {
                     element.setAttribute('data-checked', e.target.checked);
                     checkboxElement.classList.toggle('checked', e.target.checked);
                 });
             }
-            
+
             // フォントカラーのプロパティを追加
             const fontColorGroup = document.createElement('div');
             fontColorGroup.classList.add('property-group');
@@ -773,7 +774,7 @@
                 element.style.top = `${e.target.value}px`;
             });
         }
-        
+
         function updatePropertyPanelForCanvas() {
             clearPropertyPanel();
             propertyPanel.innerHTML = `<h3>フォームプロパティ</h3>`;
@@ -946,7 +947,7 @@
                 contextMenu.style.display = 'none';
             }
         });
-        
+
         // Modal Events
         showCodeButton.addEventListener('click', () => {
             const elements = canvasContainer.querySelectorAll('.draggable');
@@ -977,22 +978,22 @@
                 ];
                 data.push(elementData);
             });
-            
+
             // イベントが有効なボタンのコードのみを生成
             let eventFunctions = "";
             const buttonElements = canvasContainer.querySelectorAll('[data-item-type="button"]');
-            
+
             buttonElements.forEach((el, index) => {
                 const buttonNumber = index + 1;
                 if (el.dataset.hasEvent === 'true') {
-                    const eventCode = el.dataset.eventCode !== '' ? el.dataset.eventCode : `    # ここにボタン${buttonNumber}の処理を記述\n    pass`;
+                    const eventCode = el.dataset.eventCode.trim() !== '' ? el.dataset.eventCode : `    # ここにボタン${buttonNumber}の処理を記述\n    pass`;
                     eventFunctions += `\n# ボタン${buttonNumber}のクリックイベント\ndef button${buttonNumber}_click():\n${eventCode}\n\n`;
                 }
             });
-            
+
             // ローカルストレージからユーザーコードを読み込む
             const savedUserCode = localStorage.getItem('userCode') || '';
-            
+
             // 生成されたイベント関数と保存されたユーザーコードを結合して表示
             codeDisplayArea.value = eventFunctions + savedUserCode;
             modalOverlay.style.display = 'flex';
@@ -1001,7 +1002,7 @@
         modalCloseButton.addEventListener('click', () => {
             modalOverlay.style.display = 'none';
         });
-        
+
         // Modal Events
         codeDisplayArea.addEventListener('keydown', function(e) {
             if (e.key === 'Tab') {
@@ -1018,7 +1019,7 @@
             const currentCode = codeDisplayArea.value;
             const eventFunctionRegex = /#\s*ボタン(\d+)\s*のクリックイベント\s*def\s*button\1_click\(\):\s*((?:\s*[\s\S]*?)(?=\n#\s*ボタン|\s*def\s*|\s*#\s*.*$|$))/g;
             const buttonElements = canvasContainer.querySelectorAll('[data-item-type="button"]');
-            
+
             let userCode = currentCode;
 
             let match;
@@ -1030,7 +1031,7 @@
 
                 // 全ての行の先頭に4つのスペースを追加
                 const indentedCode = codeBody.split('\n').map(line => '    ' + line).join('\n');
-                
+
                 if (buttonElements[buttonNumber - 1]) {
                     buttonElements[buttonNumber - 1].dataset.eventCode = indentedCode;
                 }
@@ -1040,19 +1041,15 @@
             for (const func of extractedFunctions) {
                 userCode = userCode.replace(func, '');
             }
-            
+
             userCode = userCode.replace(/\n\s*$/, '').trim();
             localStorage.setItem('userCode', userCode);
-            
+
             modalOverlay.style.display = 'none';
-            
+
             if (activeElement) {
                 updatePropertyPanel(activeElement);
             }
-        });
-
-        window.addEventListener('beforeunload', (event) => {
-            localStorage.removeItem('userCode');
         });
 
         termsLink.addEventListener('click', (e) => {
@@ -1093,7 +1090,7 @@
 
             const userCode = localStorage.getItem('userCode') || '';
             const finalCode = Maker(data, userCode);
-            
+
             const blob = new Blob([finalCode], {
                 type: "text/plain"
             });
