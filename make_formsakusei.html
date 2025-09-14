@@ -64,7 +64,7 @@
 
         .canvas-container {
             position: relative;
-            background-color: #222;
+            background-color: #ffffff;
             border: 2px solid #fff;
             border-radius: 10px;
             overflow: hidden;
@@ -94,9 +94,10 @@
             border: 2px dashed transparent;
             padding: 5px;
             box-sizing: border-box;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 0, 0, 0.1);
             margin: 0;
             padding: 0;
+            color: #000000;
         }
 
         .draggable[data-item-type="text"] {
@@ -195,6 +196,11 @@
             background-color: #555;
             color: white;
             font-size: 14px;
+        }
+        
+        .property-group textarea {
+            white-space: pre;
+            overflow-x: auto;
         }
 
         #context-menu {
@@ -458,7 +464,7 @@
         let relativeX, relativeY;
         let itemWidth, itemHeight;
         let canvasTitle = "App";
-        let canvasBgColor = "#222222";
+        let canvasBgColor = "#ffffff";
         let fileExtension = ".pyw"; // デフォルトの拡張子を設定
 
         // ローカルストレージからコードを読み込む
@@ -497,28 +503,21 @@
                 newElement.textContent = `ボタン #${itemNumber}`;
                 newElement.setAttribute('data-has-event', 'true');
                 newElement.setAttribute('data-event-code', '');
-                newElement.style.color = 'white';
+                newElement.style.color = '#000000';
                 newElement.addEventListener('dblclick', (e) => {
                     e.stopPropagation();
                     selectElement(e.target);
-                    const propPanel = document.querySelector('.property-panel');
-                    const eventToggle = propPanel.querySelector('#prop-event-toggle');
-                    const eventCodeArea = propPanel.querySelector('#prop-event-code');
-                    if (eventToggle && eventCodeArea) {
-                        eventToggle.checked = true;
-                        eventCodeArea.value = e.target.dataset.eventCode;
-                    }
                 });
             } else if (type === 'textbox') {
                 newElement = document.createElement('input');
                 newElement.type = 'text';
                 newElement.placeholder = `テキストボックス #${itemNumber}`;
-                newElement.style.color = 'white';
+                newElement.style.color = '#000000';
             } else if (type === 'text') {
                 newElement = document.createElement('p');
                 newElement.textContent = `テキスト #${itemNumber}`;
                 newElement.style.userSelect = 'none';
-                newElement.style.color = 'white';
+                newElement.style.color = '#000000';
 
                 newElement.addEventListener('dblclick', (e) => {
                     e.target.setAttribute('contenteditable', 'true');
@@ -533,7 +532,7 @@
                 container.style.userSelect = 'none';
                 container.setAttribute('data-item-type', type);
                 container.setAttribute('data-checked', 'false');
-                container.style.color = 'white';
+                container.style.color = '#000000';
 
                 const customCheckbox = document.createElement('div');
                 customCheckbox.classList.add('custom-checkbox');
@@ -685,6 +684,17 @@
                 });
                 eventCodeArea.addEventListener('input', (e) => {
                     element.setAttribute('data-event-code', e.target.value);
+                });
+                // プロパティパネルのtextareaにTabキー機能を追加
+                eventCodeArea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                        this.selectionStart = this.selectionEnd = start + 4;
+                        element.setAttribute('data-event-code', this.value);
+                    }
                 });
             }
 
@@ -968,21 +978,19 @@
                 data.push(elementData);
             });
             
-            // 編集可能なコード（イベント関数部分）のみを抽出
+            // イベントが有効なボタンのコードのみを生成
             let eventFunctions = "";
-            let count = [1, 1, 1, 1]; // text, textbox, button, checkbox
-            for (let i = 0; i < data.length; i++) {
-                if (data[i][0] === "button" && data[i][8] === 'true') {
-                    const eventCode = data[i][9] && data[i][9].trim() !== '' ? data[i][9] : `# ここにボタン${count[2]}の処理を記述\n    pass`;
-                    eventFunctions += `\n# ボタン${count[2]}のクリックイベント\ndef button${count[2]}_click():\n    ${eventCode.split('\n').join('\n    ')}\n\n`;
-                }
-                if (data[i][0] === "text") count[0]++;
-                if (data[i][0] === "textbox") count[1]++;
-                if (data[i][0] === "button") count[2]++;
-                if (data[i][0] === "checkbox") count[3]++;
-            }
+            const buttonElements = canvasContainer.querySelectorAll('[data-item-type="button"]');
             
-            // ローカルストレージに保存されているユーザーコードを読み込む
+            buttonElements.forEach((el, index) => {
+                const buttonNumber = index + 1;
+                if (el.dataset.hasEvent === 'true') {
+                    const eventCode = el.dataset.eventCode !== '' ? el.dataset.eventCode : `    # ここにボタン${buttonNumber}の処理を記述\n    pass`;
+                    eventFunctions += `\n# ボタン${buttonNumber}のクリックイベント\ndef button${buttonNumber}_click():\n${eventCode}\n\n`;
+                }
+            });
+            
+            // ローカルストレージからユーザーコードを読み込む
             const savedUserCode = localStorage.getItem('userCode') || '';
             
             // 生成されたイベント関数と保存されたユーザーコードを結合して表示
@@ -994,77 +1002,53 @@
             modalOverlay.style.display = 'none';
         });
         
-        // Tabキーを4つのスペースに変換
+        // Modal Events
         codeDisplayArea.addEventListener('keydown', function(e) {
             if (e.key === 'Tab') {
                 e.preventDefault();
                 const start = this.selectionStart;
                 const end = this.selectionEnd;
 
-                // 4つのスペースを挿入
                 this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
-
-                // カーソルを新しい位置に移動
                 this.selectionStart = this.selectionEnd = start + 4;
             }
         });
 
         saveCodeButton.addEventListener('click', () => {
             const currentCode = codeDisplayArea.value;
-            const lines = currentCode.split('\n');
-            const newCodeLines = [];
-            const seenFunctions = new Set();
-            let i = 0;
+            const eventFunctionRegex = /#\s*ボタン(\d+)\s*のクリックイベント\s*def\s*button\1_click\(\):\s*((?:\s*[\s\S]*?)(?=\n#\s*ボタン|\s*def\s*|\s*#\s*.*$|$))/g;
+            const buttonElements = canvasContainer.querySelectorAll('[data-item-type="button"]');
+            
+            let userCode = currentCode;
 
-            while (i < lines.length) {
-                const currentLine = lines[i];
-                const buttonFunctionMatch = currentLine.match(/def (button\d+_click\(\)):/);
-                const commentMatch = currentLine.match(/^\s*# ボタン\d+のクリックイベント$/);
+            let match;
+            let extractedFunctions = [];
+            while ((match = eventFunctionRegex.exec(currentCode)) !== null) {
+                const fullMatch = match[0];
+                const buttonNumber = parseInt(match[1], 10);
+                let codeBody = match[2];
 
-                if (buttonFunctionMatch) {
-                    const functionName = buttonFunctionMatch[1];
-                    // 関数名が重複しているか確認
-                    if (seenFunctions.has(functionName)) {
-                        // 重複する関数のブロックをスキップ
-                        while (i < lines.length && (lines[i].trim() !== '' || (lines[i].trim() === '' && lines[i+1] && !lines[i+1].startsWith('def')))) {
-                            i++;
-                        }
-                    } else {
-                        seenFunctions.add(functionName);
-                        // コメント行があれば追加
-                        if (commentMatch) {
-                            newCodeLines.push(currentLine);
-                            i++;
-                        }
-                        // 関数本体を追加
-                        while (i < lines.length && lines[i].trim() !== '' && !lines[i].startsWith('def button')) {
-                            newCodeLines.push(lines[i]);
-                            i++;
-                        }
-                    }
-                } else {
-                    newCodeLines.push(currentLine);
-                    i++;
+                // 全ての行の先頭に4つのスペースを追加
+                const indentedCode = codeBody.split('\n').map(line => '    ' + line).join('\n');
+                
+                if (buttonElements[buttonNumber - 1]) {
+                    buttonElements[buttonNumber - 1].dataset.eventCode = indentedCode;
                 }
+                extractedFunctions.push(fullMatch);
             }
 
-            let userCode = newCodeLines.join('\n');
-            const buttonFunctionRegex = /^\s*(# ボタン\d+のクリックイベント)?\s*def button\d+_click\(\):\n(?:    .*\n)*\n/gm;
-            const tempCode = userCode;
-            const matches = tempCode.match(buttonFunctionRegex);
-            
-            if (matches) {
-                userCode = tempCode.replace(buttonFunctionRegex, '');
-                const uniqueFunctions = Array.from(new Set(matches.map(f => f.trim())));
-                userCode = uniqueFunctions.join('\n') + '\n' + userCode;
+            for (const func of extractedFunctions) {
+                userCode = userCode.replace(func, '');
             }
-
-            userCode = userCode.split('\n').filter(line => line.trim() !== '').join('\n');
             
-            // ローカルストレージに保存
+            userCode = userCode.replace(/\n\s*$/, '').trim();
             localStorage.setItem('userCode', userCode);
             
             modalOverlay.style.display = 'none';
+            
+            if (activeElement) {
+                updatePropertyPanel(activeElement);
+            }
         });
 
         window.addEventListener('beforeunload', (event) => {
@@ -1107,7 +1091,6 @@
                 data.push(elementData);
             });
 
-            // ローカルストレージからユーザーコードを読み込んでMakerに渡す
             const userCode = localStorage.getItem('userCode') || '';
             const finalCode = Maker(data, userCode);
             
@@ -1117,26 +1100,25 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = canvasTitle + fileExtension; // 選択された拡張子を使用
+            a.download = canvasTitle + fileExtension;
             a.click();
             URL.revokeObjectURL(url);
         });
 
         // RGBをHEXに変換するヘルパー関数
         function rgbToHex(rgb) {
-            if (!rgb || rgb.startsWith('rgba(0, 0, 0, 0)')) return '#000000'; // 透明な色の場合、黒を返す
+            if (!rgb || rgb.startsWith('rgba(0, 0, 0, 0)')) return '#000000';
             const hexMatch = rgb.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
             if (hexMatch) return hexMatch[0];
 
             const rgbMatch = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-            if (!rgbMatch) return '#000000'; // マッチしない場合は黒を返す
+            if (!rgbMatch) return '#000000';
 
             return "#" +
                 ("0" + parseInt(rgbMatch[1], 10).toString(16)).slice(-2) +
                 ("0" + parseInt(rgbMatch[2], 10).toString(16)).slice(-2) +
                 ("0" + parseInt(rgbMatch[3], 10).toString(16)).slice(-2);
         }
-
 
         function Maker(e, userCode) {
             const element_f = document.querySelector('.canvas-container');
@@ -1145,17 +1127,18 @@
             const title_f = canvasTitle;
             const bgColor_f = canvasBgColor;
 
-            // 初期設定コード
             const initialCode = `import tkinter as tk\n\n# ウィンドウの作成\nroot = tk.Tk()\nroot.title(\"${title_f}\")\nroot.geometry(\"${width_f}x${height_f}\")\nroot.configure(bg='${bgColor_f}')\n\n`;
 
-            // 変数宣言コード
             let varCode = "";
             let eventFunctions = "";
-            let count = [1, 1, 1, 1]; // text, textbox, button, checkbox
+            let count = [1, 1, 1, 1];
             for (let i = 0; i < e.length; i++) {
-                if (e[i][0] === "button" && e[i][8] === 'true') {
-                    const eventCode = e[i][9] && e[i][9].trim() !== '' ? e[i][9] : `# ここにボタン${count[2]}の処理を記述\n    pass`;
-                    eventFunctions += `\n# ボタン${count[2]}のクリックイベント\ndef button${count[2]}_click():\n    ${eventCode.split('\n').join('\n    ')}\n\n`;
+                if (e[i][0] === "button") {
+                    if (e[i][8] === 'true') {
+                        const eventCode = e[i][9] && e[i][9].trim() !== '' ? e[i][9] : `# ここにボタン${count[2]}の処理を記述\n    pass`;
+                        const indentedCode = eventCode.split('\n').map(line => '    ' + line).join('\n');
+                        eventFunctions += `\n# ボタン${count[2]}のクリックイベント\ndef button${count[2]}_click():\n${indentedCode}\n\n`;
+                    }
                 }
                 if (e[i][0] === "checkbox") {
                     varCode += `var_checkbox${count[3]} = tk.BooleanVar(value=${e[i][10]})\n`;
@@ -1166,12 +1149,11 @@
                 if (e[i][0] === "checkbox") count[3]++;
             }
 
-            // ウィジェット作成コード
-            let widgetsCode = "";
+            let widgetsCode = "\n";
             count = [1, 1, 1, 1];
             for (let i = 0; i < e.length; i++) {
                 e[i][6] = parseInt(e[i][6], 10);
-                const fgColor = `\"${e[i][7]}\"`;
+                const fgColor = `\"${rgbToHex(e[i][7])}\"`;
                 if (e[i][0] === "text") {
                     widgetsCode += `label${count[0]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nlabel${count[0]} = tk.Label(root, text="${e[i][1]}",font=label${count[0]}_font, fg=${fgColor})\nlabel${count[0]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[0]++;
@@ -1192,7 +1174,7 @@
             }
             widgetsCode += "root.mainloop()";
 
-            return initialCode + varCode + eventFunctions + userCode + widgetsCode;
+            return initialCode + varCode + userCode + eventFunctions + widgetsCode;
         }
     </script>
 </body>
