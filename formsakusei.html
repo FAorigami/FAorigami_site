@@ -1,65 +1,182 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>pythonのForm作成</title>
+    <title>Python フォーム作成ツール</title>
     <style>
+        /* 全体設定 */
         body {
-            background-color: black;
-            color: white;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
+            background-color: #2c2f33; /* ダークグレーの背景 */
+            color: #ffffff; /* 白い文字 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-family: sans-serif;
-            flex-direction: column;
-            /* ボタンを中央に配置するために追加 */
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
         }
 
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
+        .main-container {
+            text-align: center;
+            padding: 40px;
+            background-color: #23272a; /* 濃いグレーの背景 */
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
         }
 
-        /* ボタン間の間隔を調整 */
+        /* タイトル */
+        .site-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #b0b0b0;
+            margin-bottom: 30px;
+        }
+
+        /* ボタンコンテナ */
         .button-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            /* ボタン間の余白 */
+            gap: 15px; /* ボタン間の余白 */
         }
+
+        /* ボタンデザイン */
+        .action-button {
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none; /* リンクとして使用 */
+            color: #fff;
+        }
+
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #new_make {
+            background-color: #5865f2; /* 新規作成ボタンを強調する青色 */
+        }
+
+        #new_make:hover {
+            background-color: #4752c4;
+        }
+
+        #how_to_use_btn {
+            background-color: #43b581; /* 緑色のボタン */
+        }
+
+        #how_to_use_btn:hover {
+            background-color: #3aa673;
+        }
+
+        #terms_button {
+            background-color: #7289da; /* 薄い青色 */
+        }
+
+        #terms_button:hover {
+            background-color: #677bc4;
+        }
+
+        /* 使用方法コンテンツのスタイル */
+        #how_to_use_content {
+            display: none; /* 初期状態では非表示 */
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #2c2f33;
+            border-radius: 8px;
+            text-align: left;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        
+        #how_to_use_content.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        #how_to_use_content h3, #how_to_use_content h4 {
+            color: #43b581; /* 緑色の見出し */
+            margin-bottom: 10px;
+        }
+
+        #how_to_use_content ul {
+            padding-left: 20px;
+        }
+
+        #how_to_use_content a {
+            color: #5865f2;
+            text-decoration: none;
+        }
+
+        #how_to_use_content a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 赤文字の注意書き */
+        .red-text {
+            color: #ff5252; /* 明るい赤色 */
+            font-weight: bold;
+        }
+
     </style>
 </head>
-
 <body>
-    <div class="button-container">
-        <button id="new_make">新規作成</button>
-        <button id="terms_button">利用規約</button>
+    <div class="main-container">
+        <h1 class="site-title">Python フォーム作成ツール</h1>
+        <p class="subtitle">簡単な入力でPythonのフォームコードを自動生成します。</p>
+        
+        <div class="button-container">
+            <a href="https://faorigami.github.io/FAorigami_site/make_formsakusei.html" id="new_make" class="action-button">新規作成</a>
+            <button id="how_to_use_btn" class="action-button">使用方法</button>
+            <a href="https://faorigami.github.io/FAorigami_site/pythonnoformsakuseinoriyoukiyaku.html" id="terms_button" class="action-button">利用規約</a>
+        </div>
+        
+        <div id="how_to_use_content">
+            <h3>使い方ガイド</h3>
+            <h4>作成サイトについて</h4>
+            <p>まずは、<a href="https://faorigami.github.io/FAorigami_site/pythonnoformsakuseinoriyoukiyaku.html">利用規約</a>をよくお読みください。<br>利用規約を違反した場合は、利用規約内で記されています。</p>
+            <p>この作成サイトでダウンロードできるファイルやコードは、Pythonがインストールされていないと実行できません。</p>
+            <p>作成サイトは基本的にPCでの操作を推奨しています。</p>
+
+            <h4>使用方法</h4>
+            <p>ツールボックスからツールを四角形（フォーム）に**ドラッグ＆ドロップ**することでツールを設置できます。</p>
+            <ul>
+                <li>設置したツールは**左クリック**で選択できます。</li>
+                <li>設置したツールは**右クリック**で選択または削除することができます。</li>
+                <li>設置したツールまたは四角形（フォーム）をクリックすることで、それぞれのプロパティを操作できます。</li>
+                <li>**「コード表示」**では、関数の追加や、ボタンイベントの関数の編集ができます。</li>
+                <li>**「フォーム生成」**ボタンを押すと、ファイルがダウンロードされます。</li>
+            </ul>
+            <p><span class="red-text">※作成サイトを離れたり、再読み込み等をすると、作成中の内容が消えてしまいますので注意してください。</span></p>
+
+            <p>その他、分からないこと、追加してほしい機能、バグ等がございましたら、<a href="https://x.com/faorigami" target="_blank">FAorigamiのX(旧Twitter)</a>でDMしてください。</p>
+        </div>
     </div>
 
-
     <script>
-        const new_make = document.getElementById('new_make');
-        const terms_button = document.getElementById('terms_button');
+        const howToUseBtn = document.getElementById('how_to_use_btn');
+        const howToUseContent = document.getElementById('how_to_use_content');
 
-        // クリックイベントのリスナーを追加
-        new_make.addEventListener('click', () => {
-            window.location.href = 'https://faorigami.github.io/FAorigami_site/make_formsakusei.html';
-        });
-
-        // 新しいボタンのクリックイベント
-        terms_button.addEventListener('click', () => {
-            window.location.href = 'https://faorigami.github.io/FAorigami_site/pythonnoformsakuseinoriyoukiyaku.html';
+        howToUseBtn.addEventListener('click', () => {
+            const isVisible = howToUseContent.classList.toggle('visible');
+            howToUseBtn.textContent = isVisible ? '使用方法を非表示' : '使用方法';
         });
     </script>
 </body>
-
-
 </html>
