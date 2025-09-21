@@ -1295,29 +1295,29 @@
                 e[i][6] = parseInt(e[i][6], 10);
                 const fgColor = `\"${rgbToHex(e[i][7])}\"`;
                 if (e[i][0] === "text") {
-                    widgetsCode += `label${count[0]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nlabel${count[0]} = tk.Label(${parent_f}, text="${e[i][1]}",font=label${count[0]}_font, fg=${fgColor}, bg='${bgColor_f}')\nlabel${count[0]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `label${count[0]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nlabel${count[0]} = tk.Label(root, text="${e[i][1]}",font=label${count[0]}_font, fg=${fgColor}, bg='${bgColor_f}')\nlabel${count[0]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[0]++;
                 } else if (e[i][0] === "textbox") {
-                    widgetsCode += `entry_font${count[1]} = ("Meiryo UI", ${e[i][6]}, "italic")\nentry_box${count[1]} = tk.Entry(${parent_f}, font=entry_font${count[1]}, fg=${fgColor})\nentry_box${count[1]}.insert(0, "${e[i][1]}")\nentry_box${count[1]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `entry_font${count[1]} = ("Meiryo UI", ${e[i][6]}, "italic")\nentry_box${count[1]} = tk.Entry(root, font=entry_font${count[1]}, fg=${fgColor})\nentry_box${count[1]}.insert(0, "${e[i][1]}")\nentry_box${count[1]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[1]++;
                 } else if (e[i][0] === "button") {
                     if (e[i][8] === 'true') {
-                        widgetsCode += `button${count[2]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nbutton${count[2]} = tk.Button(${parent_f}, text="${e[i][1]}",font=button${count[2]}_font, command=button${count[2]}_click, fg=${fgColor})\nbutton${count[2]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                        widgetsCode += `button${count[2]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nbutton${count[2]} = tk.Button(root, text="${e[i][1]}",font=button${count[2]}_font, command=button${count[2]}_click, fg=${fgColor})\nbutton${count[2]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     } else {
-                        widgetsCode += `button${count[2]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nbutton${count[2]} = tk.Button(${parent_f}, text="${e[i][1]}",font=button${count[2]}_font, fg=${fgColor})\nbutton${count[2]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                        widgetsCode += `button${count[2]}_font = ("Meiryo UI", ${e[i][6]}, "italic")\nbutton${count[2]} = tk.Button(root, text="${e[i][1]}",font=button${count[2]}_font, fg=${fgColor})\nbutton${count[2]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     }
                     count[2]++;
                 } else if (e[i][0] === "checkbox") {
-                    widgetsCode += `checkbox${count[3]} = tk.Checkbutton(${parent_f}, text="${e[i][1]}", variable=var_checkbox${count[3]}, fg=${fgColor}, bg='${bgColor_f}')\ncheckbox${count[3]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `checkbox${count[3]} = tk.Checkbutton(root, text="${e[i][1]}", variable=var_checkbox${count[3]}, fg=${fgColor}, bg='${bgColor_f}')\ncheckbox${count[3]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[3]++;
                 } else if (e[i][0] === "radiobutton") {
-                    widgetsCode += `radiobutton${count[4]} = tk.Radiobutton(${parent_f}, text="${e[i][1]}", fg=${fgColor}, bg='${bgColor_f}')\nradiobutton${count[4]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `radiobutton${count[4]} = tk.Radiobutton(root, text="${e[i][1]}", fg=${fgColor}, bg='${bgColor_f}')\nradiobutton${count[4]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[4]++;
                 } else if (e[i][0] === "listbox") {
-                    widgetsCode += `listbox${count[5]} = tk.Listbox(${parent_f}, fg=${fgColor}, bg='${bgColor_f}')\nlistbox${count[5]}.insert(tk.END, "${e[i][1]}")\nlistbox${count[5]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `listbox${count[5]} = tk.Listbox(root, fg=${fgColor}, bg='${bgColor_f}')\nlistbox${count[5]}.insert(tk.END, "${e[i][1]}")\nlistbox${count[5]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[5]++;
                 } else if (e[i][0] === "menu") {
-                    widgetsCode += `menu${count[6]} = tk.Menu(${parent_f}, tearoff=0)\nmenu_button${count[6]} = tk.Menubutton(${parent_f}, text="${e[i][1]}", menu=menu${count[6]}, fg=${fgColor})\nmenu_button${count[6]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
+                    widgetsCode += `menu${count[6]} = tk.Menu(root, tearoff=0)\nmenu_button${count[6]} = tk.Menubutton(root, text="${e[i][1]}", menu=menu${count[6]}, fg=${fgColor})\nmenu_button${count[6]}.place(x=${e[i][4]}, y=${e[i][5]},width=${e[i][2]}, height=${e[i][3]})\n`;
                     count[6]++;
                 }
             }
