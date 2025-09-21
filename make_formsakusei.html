@@ -603,8 +603,8 @@
             if (type === 'button') {
                 newElement = document.createElement('button');
                 newElement.textContent = `ボタン #${itemNumber}`;
-                newElement.setAttribute('data-has-event', 'true');
-                newElement.setAttribute('data-event-code', '');
+                newElement.setAttribute('data-hasEvent', 'true');
+                newElement.setAttribute('data-eventCode', '');
                 newElement.style.color = '#000000';
             } else if (type === 'textbox') {
                 newElement = document.createElement('input');
@@ -687,6 +687,8 @@
                 const dropY = e.offsetY - relativeY;
                 newElement.style.left = `${dropX}px`;
                 newElement.style.top = `${dropY}px`;
+                newElement.style.width = `${itemWidth}px`;
+                newElement.style.height = `${itemHeight}px`;
                 canvasContainer.appendChild(newElement);
                 newElement.addEventListener('mousedown', (e) => {
                     if (e.target.classList.contains('item-resize-handle')) {
@@ -886,11 +888,11 @@
                 eventCodeArea.value = element.dataset.eventCode || '';
                 eventCodeArea.style.display = eventToggle.checked ? 'block' : 'none';
                 eventToggle.addEventListener('change', (e) => {
-                    element.setAttribute('data-has-event', e.target.checked);
+                    element.setAttribute('data-hasEvent', e.target.checked);
                     eventCodeArea.style.display = e.target.checked ? 'block' : 'none';
                 });
                 eventCodeArea.addEventListener('input', (e) => {
-                    element.setAttribute('data-event-code', e.target.value);
+                    element.setAttribute('data-eventCode', e.target.value);
                 });
                 eventCodeArea.addEventListener('keydown', function(e) {
                     if (e.key === 'Tab') {
@@ -899,7 +901,7 @@
                         const end = this.selectionEnd;
                         this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
                         this.selectionStart = this.selectionEnd = start + 4;
-                        element.setAttribute('data-event-code', this.value);
+                        element.setAttribute('data-eventCode', this.value);
                     }
                 });
             }
@@ -1217,8 +1219,8 @@
             const buttonElements = canvasContainer.querySelectorAll('[data-item-type="button"]');
             buttonElements.forEach((el, index) => {
                 const buttonNumber = index + 1;
-                if (el.dataset.has-event === 'true') {
-                    const eventCode = el.dataset.event-code.trim() !== '' ? el.dataset.event-code : `    # ここにボタン${buttonNumber}の処理を記述\n    pass`;
+                if (el.dataset.hasEvent === 'true') {
+                    const eventCode = el.dataset.eventCode.trim() !== '' ? el.dataset.eventCode : `    # ここにボタン${buttonNumber}の処理を記述\n    pass`;
                     eventFunctions += `\n# ボタン${buttonNumber}のクリックイベント\ndef button${buttonNumber}_click():\n${eventCode}\n\n`;
                 }
             });
