@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>16x16 塗り絵</title>
+    <title>ドット絵作成ツール</title>
     <style>
         body {
             display: flex;
@@ -92,15 +92,29 @@
         #colorInput input[type="number"] {
             width: 50px;
         }
+        #size-control {
+            margin-top: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        #size-control input[type="number"] {
+            width: 50px;
+        }
     </style>
 </head>
 <body>
     <div id="terms-link">
         <a href="https://faorigami.github.io/FAorigami_site/ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項.html" target="_blank">利用規約と注意事項</a>
     </div>
-    <canvas id="canvas" width="400" height="400"></canvas>
+        <canvas id="canvas" width="400" height="400"></canvas>
     <div class="controls-container">
-        <div id="palette">
+        <div id="size-control">
+            <label for="gridPixelSize">グリッドサイズ (縦横):</label>
+            <input type="number" id="gridPixelSize" value="16" min="8" max="64">
+            <button id="changeSize">サイズ変更 (リセット)</button>
+            <p style="font-size: 0.8em; color: gray;">※変更すると描画内容はリセットされます。</p>
+        </div>
+                <div id="palette">
             <div class="color" style="background-color: black;" data-color="black"></div>
             <div class="color" style="background-color: red;" data-color="red"></div>
             <div class="color" style="background-color: blue;" data-color="blue"></div>
@@ -152,17 +166,20 @@
         const imageSizeInput = document.getElementById('imageSize');
         const pngFormatRadio = document.getElementById('pngFormat');
         const bmpFormatRadio = document.getElementById('bmpFormat');
+        const gridPixelSizeInput = document.getElementById('gridPixelSize');
+        const changeSizeButton = document.getElementById('changeSize');
 
-        const gridSize = 16;
-        const cellSize = 25;
-        const canvasWidth = gridSize * cellSize;
-        const canvasHeight = gridSize * cellSize;
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
+        // キャンバスの固定サイズ
+        const fixedCanvasSize = 400; 
+        canvas.width = fixedCanvasSize;
+        canvas.height = fixedCanvasSize;
+
+        let gridSize; // 描画ピクセル数 (例: 16, 32)
+        let cellSize; // 1ピクセルあたりの表示サイズ (例: 25, 12.5)
         let currentColor = 'black';
         let isErasing = false;
         let isDrawing = false;
-        let shouldDrawGrid = true; // 通常描画時にグリッド線を描画するかどうかのフラグ
+        let shouldDrawGrid = true;
 
         // 色の数値定義
         const COLOR_NONE = 0;
@@ -185,13 +202,26 @@
             'white': COLOR_WHITE
         };
 
-        // 多次元配列の初期化
+        // ピクセルデータを格納する多次元配列
         var pixelData = [];
-        for (var i = 0; i < 16; i++) {
-            pixelData[i] = [];
-            for (var j = 0; j < 16; j++) {
-                pixelData[i][j] = 0;
+
+        // グリッドとピクセルデータを初期化・再設定する関数
+        function initializeGrid(newSize) {
+            gridSize = newSize;
+            cellSize = fixedCanvasSize / gridSize;
+            
+            // pixelDataを新しいサイズで初期化
+            pixelData = [];
+            for (let i = 0; i < gridSize; i++) {
+                pixelData[i] = [];
+                for (let j = 0; j < gridSize; j++) {
+                    pixelData[i][j] = COLOR_NONE;
+                }
             }
+            // 画像ダウンロードサイズも初期グリッドサイズに合わせる
+            imageSizeInput.value = newSize;
+
+            drawCanvas(); // 初期描画
         }
 
         function drawGrid() {
@@ -239,7 +269,8 @@
             }
         }
 
-        drawCanvas(); // 初回描画
+        // 初期サイズで描画開始
+        initializeGrid(parseInt(gridPixelSizeInput.value));
 
         palette.addEventListener('click', (e) => {
             if (e.target.classList.contains('color')) {
@@ -278,8 +309,12 @@
 
         function paint(e) {
             const rect = canvas.getBoundingClientRect();
+            // cellSizeを動的に使用
             const x = Math.floor((e.clientX - rect.left) / cellSize);
             const y = Math.floor((e.clientY - rect.top) / cellSize);
+            
+            // 範囲外のクリックを無視
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
 
             if (isErasing) {
                 pixelData[x][y] = COLOR_NONE;
@@ -291,18 +326,73 @@
                 } else if (typeof currentColor === 'number' && currentColor >= 7) {
                     colorCode = currentColor;
                 }
+                // カスタムカラー (rgb(...)) を選択している場合
+                else if (typeof currentColor === 'string' && currentColor.startsWith('rgb')) {
+                    // 既存のカスタムカラーに一致するかチェック
+                    let foundIndex = Object.keys(savedColors).find(key => savedColors[key] === currentColor);
+                    if (foundIndex) {
+                        colorCode = parseInt(foundIndex);
+                    } else {
+                        // 基本パレットにない色の場合は、一旦選択している色として扱う（ただしpixelDataには反映されない）
+                        // このロジックは保存されたカスタムカラー以外を区別していないため、currentColorをそのまま使う
+                        // ここで一時的なカスタムカラーを許可する場合は、colorCodeに適切な値を設定する必要がある
+                        // 今回の改修では、既存の挙動を維持し、保存されたカスタムカラーのみを許容します。
+                        // ただし、setColorで設定した未保存の色が塗れないのは不便なので、
+                        // 一時的なカスタムカラーとして0より大きなカスタムインデックス（例えば9999）を割り当てるように修正
+                        // しかし、現在の設計ではその色のRGB値を取得する方法がないため、ここでは割愛します。
+                        // 一旦、setColorで設定された色は次にパレット等を選ぶまではcurrentColorとして保持されますが、
+                        // pixelDataには保存済みのカスタムカラー（数値）しか入りません。
+                        // 簡潔にするため、currentColorが文字列の場合は、その場で一時的に塗りつぶし、pixelDataは更新しない（つまり描画時に毎回消える）という挙動は不適切です。
+                        // 修正: setColorで設定された色は、一時的にpixelDataに設定できるようにcustomColorIndexを直接currentColorとして扱う（ただし、保存機能が本来の用途）
+                        // より良い設計にするため、setColorで設定された色も、カスタムカラーとして一時的に savedColors に追加する。
+                        // ただし、これは既存のsavedColorsのロジックから逸脱するため、今回は既存のロジック（数値コードでの管理）を優先し、
+                        // setColorで設定した色を塗る際は、その色と同じ RGB値を持つ保存済みカスタムカラーがあるかどうかを探します。
+                        // 見つからない場合は、塗らない（colorCode = undefined）とします。
+
+                        // 既存の保存済みカラーをチェック（currentColorはrgb(r, g, b)形式の文字列）
+                        let tempColorCode = Object.keys(savedColors).find(key => savedColors[key] === currentColor);
+                        if (tempColorCode) {
+                             colorCode = parseInt(tempColorCode);
+                        } else {
+                            // 保存されていないカスタムカラーは、塗る前に保存ボタンを押す必要がある
+                            alert('「色を設定」でカスタム色を選んだ場合、塗る前に「色を保存」を押してください。');
+                            return; // 描画処理を中断
+                        }
+                    }
+                }
+
+
                 if (colorCode !== undefined) {
                     pixelData[x][y] = colorCode;
                 }
             }
             drawCanvas();
         }
+        
+        // 描画サイズ変更ボタンのイベントリスナー
+        changeSizeButton.addEventListener('click', () => {
+            const newSize = parseInt(gridPixelSizeInput.value);
+            if (newSize >= 8 && newSize <= 64) {
+                if (confirm(`グリッドサイズを ${newSize}x${newSize} に変更すると、現在の描画内容は全て消去されます。よろしいですか？`)) {
+                    initializeGrid(newSize);
+                    // 保存されたカスタムカラーをリセットしないが、念のためcustomColorIndexをリセット
+                    customColorIndex = 7;
+                    alert(`${newSize}x${newSize}に変更しました。`);
+                }
+            } else {
+                alert('グリッドサイズは8から64の範囲で入力してください。');
+            }
+        });
 
         downloadButton.addEventListener('click', () => {
             shouldDrawGrid = false;
-            drawCanvas();
+            drawCanvas(); // グリッドなしで一度描画
 
             const downloadSize = parseInt(imageSizeInput.value);
+            // ダウンロード画像サイズがグリッドサイズより小さい場合は警告
+            if (downloadSize < gridSize) {
+                alert(`ダウンロード画像サイズ(${downloadSize}x${downloadSize})は、現在のグリッドサイズ(${gridSize}x${gridSize})より小さいです。画像が粗くなる可能性があります。`);
+            }
             const downloadCanvas = document.createElement('canvas');
             downloadCanvas.width = downloadSize;
             downloadCanvas.height = downloadSize;
@@ -312,26 +402,29 @@
             for (let i = 0; i < gridSize; i++) {
                 for (let j = 0; j < gridSize; j++) {
                     let color;
-                    if (pixelData[i][j] === COLOR_NONE) {
+                    const pixelValue = pixelData[i][j];
+                    if (pixelValue === COLOR_NONE) {
                         color = 'rgba(0,0,0,0)';
-                    } else if (pixelData[i][j] === COLOR_BLACK) {
+                    } else if (pixelValue === COLOR_BLACK) {
                         color = 'black';
-                    } else if (pixelData[i][j] === COLOR_RED) {
+                    } else if (pixelValue === COLOR_RED) {
                         color = 'red';
-                    } else if (pixelData[i][j] === COLOR_BLUE) {
+                    } else if (pixelValue === COLOR_BLUE) {
                         color = 'blue';
-                    } else if (pixelData[i][j] === COLOR_GREEN) {
+                    } else if (pixelValue === COLOR_GREEN) {
                         color = 'green';
-                    } else if (pixelData[i][j] === COLOR_YELLOW) {
+                    } else if (pixelValue === COLOR_YELLOW) {
                         color = 'yellow';
-                    } else if (pixelData[i][j] === COLOR_WHITE) {
+                    } else if (pixelValue === COLOR_WHITE) {
                         color = 'white';
                     } else {
-                        color = savedColors[pixelData[i][j]] || 'rgba(0,0,0,0)';
+                        color = savedColors[pixelValue] || 'rgba(0,0,0,0)';
                     }
-                    // 描画先のキャンバスの対応する位置に1x1の正方形を描画
+                    
+                    // 描画先のキャンバスの対応する位置に1ピクセル分の四角形を描画
                     const x = Math.floor(i * downloadSize / gridSize);
                     const y = Math.floor(j * downloadSize / gridSize);
+                    // 拡大・縮小時の誤差を防ぐための計算
                     const width = Math.ceil((i + 1) * downloadSize / gridSize) - x;
                     const height = Math.ceil((j + 1) * downloadSize / gridSize) - y;
                     downloadCtx.fillStyle = color;
@@ -353,7 +446,7 @@
             link.click();
 
             shouldDrawGrid = true;
-            drawCanvas();
+            drawCanvas(); // グリッド線を表示に戻す
         });
 
         setColorButton.addEventListener('click', () => {
@@ -363,9 +456,32 @@
 
             if (red >= 0 && red <= 255 && green >= 0 && green <= 255 && blue >= 0 && blue <= 255) {
                 currentColor = `rgb(${red}, ${green}, ${blue})`;
+                // 選択状態をリセット
                 isErasing = false;
                 palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
                 eraserButton.classList.remove('selected');
+                alert(`カスタムカラー「${currentColor}」を設定しました。塗るには「色を保存」を押して保存済みパレットから選択するか、そのままキャンバスに描画してください。`);
+
+                // RGB入力値をパレットに反映させる（選択状態ではないが、現在選択中の色として示す）
+                const tempColorDiv = document.createElement('div');
+                tempColorDiv.style.backgroundColor = currentColor;
+                tempColorDiv.style.width = '30px';
+                tempColorDiv.style.height = '30px';
+                tempColorDiv.style.border = '2px solid orange'; // 目立たせる
+                tempColorDiv.style.marginLeft = '10px';
+                tempColorDiv.textContent = '現在選択中';
+                tempColorDiv.style.fontSize = '0.7em';
+                tempColorDiv.style.display = 'inline-block';
+                tempColorDiv.style.textAlign = 'center';
+                tempColorDiv.style.verticalAlign = 'top';
+
+                // 既存の一時表示を削除してから新しいものを追加
+                const existingTemp = document.querySelector('#colorInput > div.temp-color');
+                if (existingTemp) existingTemp.remove();
+                
+                tempColorDiv.classList.add('temp-color');
+                setColorButton.parentNode.appendChild(tempColorDiv);
+
             } else {
                 alert('赤、緑、青の値は0から255の範囲で入力してください。');
             }
@@ -377,20 +493,44 @@
             const blue = parseInt(blueInput.value);
 
             if (red >= 0 && red <= 255 && green >= 0 && green <= 255 && blue >= 0 && blue <= 255) {
-                currentColor = `rgb(${red}, ${green}, ${blue})`;
-                savedColors[customColorIndex] = currentColor;
-                const button = document.createElement('button');
-                button.style.backgroundColor = currentColor;
-                button.style.border = '1px solid black';
-                button.addEventListener('click', () => {
-                    currentColor = parseInt(button.dataset.colorIndex);
-                    isErasing = false;
-                    palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
-                    eraserButton.classList.remove('selected');
-                });
-                button.dataset.colorIndex = customColorIndex;
-                savedColorsDiv.appendChild(button);
-                customColorIndex++;
+                const colorString = `rgb(${red}, ${green}, ${blue})`;
+                // 既に保存されているかチェック
+                const existingIndex = Object.keys(savedColors).find(key => savedColors[key] === colorString);
+
+                if (existingIndex) {
+                    currentColor = parseInt(existingIndex); // 既存の色を選択
+                    alert(`このカスタムカラーは既に保存されています。`);
+                } else {
+                    currentColor = customColorIndex; // 新しい色のコード
+                    savedColors[customColorIndex] = colorString;
+                    
+                    const button = document.createElement('button');
+                    button.style.backgroundColor = colorString;
+                    button.style.border = '1px solid black';
+                    button.addEventListener('click', () => {
+                        currentColor = parseInt(button.dataset.colorIndex);
+                        isErasing = false;
+                        palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+                        eraserButton.classList.remove('selected');
+                        // 保存済みカラーを選択した際にも視覚的な選択状態を追加
+                        savedColorsDiv.querySelectorAll('button').forEach(b => b.style.border = '1px solid black');
+                        button.style.border = '2px solid blue'; 
+                    });
+                    button.dataset.colorIndex = customColorIndex;
+                    savedColorsDiv.appendChild(button);
+                    customColorIndex++;
+                    alert(`カスタムカラー「${colorString}」を保存しました。`);
+                }
+
+
+                isErasing = false;
+                palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+                eraserButton.classList.remove('selected');
+                
+                // setColorで一時的に表示されていた要素を削除
+                const existingTemp = document.querySelector('#colorInput > div.temp-color');
+                if (existingTemp) existingTemp.remove();
+                
             } else {
                 alert('赤、緑、青の値は0から255の範囲で入力してください。');
             }
