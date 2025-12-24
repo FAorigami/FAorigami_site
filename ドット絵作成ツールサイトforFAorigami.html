@@ -3,768 +3,573 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎨 ドット絵作成ツール</title>
+    <title>🎨 ドット絵エディター</title>
     <style>
-        /* 基本設定とリセット */
+        /* 全体レイアウト */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: row;
-            align-items: flex-start;
-            padding: 20px;
-            background-color: #f4f7f6;
-            color: #333;
-            gap: 20px;
-            position: relative; 
+            height: 100vh;
+            margin: 0;
+            background-color: #1e272e;
+            color: #d2dae2;
+            overflow: hidden;
         }
 
-        /* 規約リンク */
-        #terms-link {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: #e0e4e7;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8em;
-            z-index: 1000;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        /* 利用規約を大きく強調 */
+        .terms-header {
+            background-color: #485460;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 2px solid #ef5777;
+            margin-bottom: 5px;
         }
-        #terms-link a {
+        .terms-header a {
+            color: #fffa65;
             text-decoration: none;
-            color: #555;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: block;
+        }
+        .terms-header a:hover {
+            text-decoration: underline;
+            color: #ffffff;
         }
 
-        /* キャンバスコンテナ (見た目の拡大・縮小用) */
-        #canvas-container {
-            position: absolute;
-            top: 20px; 
-            left: 20px; 
-            
-            transform-origin: top left;
-            transition: transform 0.3s ease-out;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-            overflow: hidden; 
-            z-index: 10; 
-            pointer-events: auto;
-        }
-
-        /* キャンバスの場所を確保するためのプレースホルダー */
-        #canvas-placeholder {
-            width: 400px; 
-            height: 400px;
-            pointer-events: none; 
-            margin-right: 20px; 
-        }
-        
-        #canvas {
-            border: 2px solid #333;
-            background-color: white;
-            cursor: crosshair;
-            border-radius: 5px;
-            display: block; 
-        }
-
-        /* コントロールパネルのコンテナ */
-        .controls-container {
-            width: 680px; 
-            padding: 15px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            z-index: 20; 
-        }
-        
-        /* 2段組のコンテナ */
-        #control-columns {
-            display: flex;
-            gap: 20px;
-        }
-        
-        .column-left, .column-right {
+        /* サイドバー */
+        .sidebar {
+            width: 320px;
+            min-width: 320px;
+            background-color: #2f3640;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            flex: 1; 
+            gap: 4px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            border-right: 1px solid #4b4b4b;
+            box-sizing: border-box;
+            overflow-y: auto; /* 万が一の溢れ防止 */
         }
 
-        /* グループ化されたコントロール */
-        .control-group {
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #1e272e;
+            overflow: auto;
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+        }
+
+        #canvas-container {
+            transform-origin: center;
+            line-height: 0;
+            background-color: #fff;
+            box-shadow: 0 0 40px rgba(0,0,0,0.6);
+        }
+
+        canvas { display: block; cursor: crosshair; }
+
+        /* 各グループ設定 */
+        .control-group {
+            background-color: #353b48;
+            padding: 8px;
+            border-radius: 6px;
+            border-bottom: 2px solid #4b7bec;
         }
         .control-group h3 {
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-            font-size: 1.1em;
+            margin: 0 0 5px 0;
+            font-size: 0.65em;
+            color: #4b7bec;
+            text-transform: uppercase;
         }
 
-        /* ボタンの共通スタイル */
-        button {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s, box-shadow 0.2s;
-            font-weight: 600;
-        }
-        button:hover {
-            opacity: 0.9;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .row {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            margin-bottom: 3px;
         }
 
-        /* プライマリボタン */
-        #changeSize, #download {
-            background-color: #007bff;
-            color: white;
-            margin-top: 10px;
-        }
+        .label-sm { font-size: 0.7em; flex: 1; }
 
-        /* セカンダリボタン */
-        #setColor, #saveColor, #eraser {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        /* 入力フィールド */
         input[type="number"], input[type="text"], select {
-            padding: 6px;
-            border: 1px solid #ccc;
+            background-color: #1e272e;
+            border: 1px solid #4b4b4b;
+            color: white;
+            padding: 2px 4px;
             border-radius: 3px;
-            width: 60px;
-            margin-right: 5px;
+            font-size: 0.75em;
+            width: 50px;
+        }
+
+        button {
+            padding: 4px 6px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.75em;
+            transition: 0.2s;
+        }
+
+        .btn-blue { background-color: #4b7bec; color: white; }
+        .btn-red { background-color: #eb3b5a; color: white; }
+        .btn-green { background-color: #20bf6b; color: white; width: 100%; margin-top: 2px; }
+
+        /* ツールボタン */
+        .tool-btn { 
+            flex: 1; 
+            background-color: #778ca3; 
+            color: white; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 6px 2px;
+        }
+        .tool-btn.active { background-color: #eb3b5a; }
+        .tool-btn select { width: 90%; margin-top: 2px; }
+
+        /* プリセットパレット */
+        #palette {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            margin-bottom: 5px;
+        }
+        .color-tile {
+            aspect-ratio: 1;
+            border-radius: 3px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .color-tile.selected { border: 2px solid white; box-shadow: 0 0 4px #fff; }
+
+        /* カスタムカラーエリア */
+        #savedColors {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr); 
+            gap: 2px; 
+            margin-top: 6px;
+            width: 100%;
+            background-color: #262c35;
+            padding: 4px;
+            border-radius: 4px;
             box-sizing: border-box;
         }
-        #filename {
-            width: 120px;
+        .saved-item {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: #3d4652;
+            border-radius: 2px;
+            box-sizing: border-box;
         }
-        #imageSize {
-            width: 80px;
+        .saved-tile {
+            width: 100%;
+            height: 100%;
+            border-radius: 2px;
+            cursor: pointer;
+            border: none;
+            display: block;
         }
-        #brushSizeSelect, #canvasZoomSelect {
-            width: 100px;
-            margin-left: 10px;
-        }
-
-        /* サイズコントロール */
-        #size-control p {
-            margin-top: 5px;
-            font-size: 0.75em;
-            color: #999;
+        .saved-tile.selected { 
+            outline: 2px solid white; 
+            outline-offset: -2px;
+            z-index: 5; 
         }
         
-        /* 描画コントロール */
-        #drawing-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .tool-options {
-            display: flex;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        /* パレット */
-        #palette {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        .color {
-            width: 30px;
-            height: 30px;
+        .del-btn {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 14px;
+            height: 14px;
+            background: #eb3b5a;
+            color: white;
+            font-size: 10px;
+            line-height: 14px;
+            text-align: center;
+            border-radius: 50%;
             cursor: pointer;
-            border: 2px solid transparent;
-            border-radius: 3px;
-            transition: transform 0.1s, border-color 0.2s;
+            display: none;
+            border: 1px solid white;
+            z-index: 10;
         }
-        .color.selected {
-            border-color: #007bff;
-            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
-        }
-
-        /* カスタムカラー入力 */
-        #colorInput {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        #colorInput .rgb-inputs {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 5px;
-        }
-        #colorInput label {
-            font-size: 0.9em;
-        }
-
-        /* 保存済みカラー */
-        #savedColors {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            padding-top: 5px;
-            min-height: 45px;
-        }
-        #savedColors button {
-            width: 35px;
-            height: 35px;
-            padding: 0;
-            border: 2px solid #333;
-            border-radius: 3px;
-        }
-
-        /* 消しゴムボタン */
-        #eraser.selected {
-            background-color: #dc3545;
-            border: 2px solid #a71d2a;
-        }
-
-        /* 一時的なカスタムカラー表示 */
-        .temp-color {
-            background-color: #e9ecef;
-            color: #333;
-            font-weight: 600;
-            padding: 5px;
-            border-radius: 3px;
-            border: 1px solid #ced4da;
-            margin-top: 5px;
-        }
-
-        .temp-color-box {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            vertical-align: middle;
-            margin-right: 5px;
-            border: 1px solid #333;
-        }
-
-        /* ファイル形式ラジオボタン */
-        .format-radio-group {
-            margin-top: 5px;
-        }
-        .format-radio-group label {
-            margin-right: 15px;
-        }
+        .saved-item:hover .del-btn { display: block; }
+        
+        #color-count { font-size: 0.65em; color: #4b7bec; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="terms-link">
-        <a href="https://faorigami.github.io/FAorigami_site/ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項.html" target="_blank">利用規約と注意事項</a>
+
+    <div class="sidebar">
+        <div class="terms-header">
+            <a href="https://faorigami.github.io/FAorigami_site/ドット絵作成ツールサイトforFAorigamiの利用規約と注意事項.html" target="_blank">📄 利用規約・注意事項</a>
+        </div>
+
+        <div class="control-group">
+            <h3>🖥️ Canvas & Grid</h3>
+            <div class="row">
+                <span class="label-sm">表示幅:</span>
+                <input type="number" id="displaySizeInput" value="600" step="50">
+                <button id="applyDisplaySize" class="btn-blue">適用</button>
+            </div>
+            <div class="row">
+                <span class="label-sm">グリッド:</span>
+                <input type="number" id="gridPixelSize" value="32" min="4" max="256">
+                <button id="resetCanvas" class="btn-red">新規</button>
+            </div>
+            <div class="row">
+                <span class="label-sm">ズーム:</span>
+                <select id="canvasZoomSelect" style="flex:1;">
+                    <option value="0.5">50%</option>
+                    <option value="1.0" selected>100%</option>
+                    <option value="1.5">150%</option>
+                    <option value="2.0">200%</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h3>🖌️ Tools (Size)</h3>
+            <div class="row">
+                <div id="penTool" class="tool-btn active">
+                    <span>🖌️ 筆</span>
+                    <select id="penSizeSelect">
+                        <option value="1">1x1</option>
+                        <option value="2">2x2</option>
+                        <option value="3">3x3</option>
+                        <option value="4">4x4</option>
+                    </select>
+                </div>
+                <div id="eraserTool" class="tool-btn">
+                    <span>🧼 消しゴム</span>
+                    <select id="eraserSizeSelect">
+                        <option value="1">1x1</option>
+                        <option value="2">2x2</option>
+                        <option value="3" selected>3x3</option>
+                        <option value="4">4x4</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <h3>🎨 Palette</h3>
+                <div id="color-count">0 / 45</div>
+            </div>
+            <div id="palette">
+                <div class="color-tile selected" style="background-color: black;" data-color="black"></div>
+                <div class="color-tile" style="background-color: #ff0000;" data-color="#ff0000"></div>
+                <div class="color-tile" style="background-color: #0000ff;" data-color="#0000ff"></div>
+                <div class="color-tile" style="background-color: #00ff00;" data-color="#00ff00"></div>
+                <div class="color-tile" style="background-color: #ffff00;" data-color="#ffff00"></div>
+                <div class="color-tile" style="background-color: #ffffff;" data-color="#ffffff"></div>
+            </div>
+            <div class="row">
+                <input type="number" id="red" value="0" min="0" max="255" placeholder="R">
+                <input type="number" id="green" value="0" min="0" max="255" placeholder="G">
+                <input type="number" id="blue" value="0" min="0" max="255" placeholder="B">
+                <button id="saveColor" class="btn-blue" style="flex:1;">保存</button>
+            </div>
+            <div id="savedColors"></div>
+        </div>
+
+        <div class="control-group">
+            <h3>💾 Export</h3>
+            <div class="row">
+                <input type="text" id="filename" value="dot_art" style="flex:1;" placeholder="Name">
+                <input type="number" id="imageSize" value="128" placeholder="px">
+            </div>
+            <div class="row">
+                <select id="formatSelect" style="width:100%;">
+                    <option value="png">PNG</option>
+                    <option value="bmp">BMP</option>
+                    <option value="ico">ICO</option>
+                </select>
+            </div>
+            <button id="download" class="btn-green">画像を保存</button>
+        </div>
     </div>
 
-    <div id="canvas-container">
-        <canvas id="canvas" width="400" height="400"></canvas>
+    <div class="main-content">
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
     </div>
-    
-    <div id="canvas-placeholder"></div>
-
-    <div class="controls-container">
-        <div id="control-columns">
-            <div class="column-left">
-                <div id="size-control" class="control-group">
-                    <h3>キャンバス設定</h3>
-                    <div>
-                        <label for="gridPixelSize">グリッドサイズ (縦横):</label>
-                        <input type="number" id="gridPixelSize" value="16" min="8" max="64" step="8">
-                        <button id="changeSize">サイズ変更 (リセット)</button>
-                        <p>※変更すると描画内容はリセットされます (8〜64の範囲で推奨)。</p>
-                    </div>
-
-                    <div class="tool-options">
-                        <label for="canvasZoomSelect">表示倍率 (見た目):</label>
-                        <select id="canvasZoomSelect">
-                            <option value="0.5">50%</option>
-                            <option value="1.0" selected>100%</option>
-                            <option value="1.5">150%</option>
-                            <option value="2.0">200%</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="drawing-controls" class="control-group">
-                    <h3>🖌️ 描画ツール</h3>
-                    <button id="eraser">消しゴム</button>
-                    <div class="tool-options">
-                        <label for="brushSizeSelect">ブラシサイズ (セル):</label>
-                        <select id="brushSizeSelect">
-                            <option value="1">1x1</option>
-                            <option value="2">2x2</option>
-                            <option value="3">3x3</option>
-                            <option value="4">4x4</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <h3>🎨 基本カラーパレット</h3>
-                    <div id="palette">
-                        <div class="color selected" style="background-color: black;" data-color="black"></div>
-                        <div class="color" style="background-color: red;" data-color="red"></div>
-                        <div class="color" style="background-color: blue;" data-color="blue"></div>
-                        <div class="color" style="background-color: green;" data-color="green"></div>
-                        <div class="color" style="background-color: yellow;" data-color="yellow"></div>
-                        <div class="color" style="background-color: white;" data-color="white"></div>
-                    </div>
-                </div>
-            </div> <div class="column-right">
-                <div id="colorInput" class="control-group">
-                    <h3>🌈 カスタムカラー (RGB)</h3>
-                    <div class="rgb-inputs">
-                        <label for="red">R:</label><input type="number" id="red" value="0" min="0" max="255">
-                        <label for="green">G:</label><input type="number" id="green" value="0" min="0" max="255">
-                        <label for="blue">B:</label><input type="number" id="blue" value="0" min="0" max="255">
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
-                        <button id="setColor">色を設定</button>
-                        <button id="saveColor">色を保存</button>
-                    </div>
-                    </div>
-
-                <div class="control-group">
-                    <h3>💾 保存済みカスタムカラー</h3>
-                    <div id="savedColors">
-                        </div>
-                </div>
-
-                <div id="controls" class="control-group">
-                    <h3>⬇️ エクスポート</h3>
-                    <div>
-                        <label for="filename">ファイル名:</label>
-                        <input type="text" id="filename" value="pixel_art">
-                    </div>
-
-                    <div style="margin-top: 10px;">
-                        <label for="imageSize">画像サイズ:</label>
-                        <input type="number" id="imageSize" value="16" min="1" max="1024">
-                    </div>
-
-                    <div class="format-radio-group">
-                        <label>ファイル形式:</label>
-                        <input type="radio" id="pngFormat" name="fileFormat" value="png" checked>
-                        <label for="pngFormat">PNG (推奨)</label>
-                        <input type="radio" id="bmpFormat" name="fileFormat" value="bmp">
-                        <label for="bmpFormat">BMP</label>
-                    </div>
-                    
-                    <button id="download">ダウンロード</button>
-                </div>
-            </div> 
-        </div> 
-    </div> 
 
     <script>
-        // --- 要素の取得 ---
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const canvasContainer = document.getElementById('canvas-container'); 
-        const canvasPlaceholder = document.getElementById('canvas-placeholder'); 
-        const canvasZoomSelect = document.getElementById('canvasZoomSelect'); 
-        const palette = document.getElementById('palette');
-        const eraserButton = document.getElementById('eraser');
-        const downloadButton = document.getElementById('download');
-        const redInput = document.getElementById('red');
-        const greenInput = document.getElementById('green');
-        const blueInput = document.getElementById('blue');
-        const setColorButton = document.getElementById('setColor');
-        const saveColorButton = document.getElementById('saveColor');
-        const savedColorsDiv = document.getElementById('savedColors');
-        const filenameInput = document.getElementById('filename');
-        const imageSizeInput = document.getElementById('imageSize');
-        const pngFormatRadio = document.getElementById('pngFormat');
-        const bmpFormatRadio = document.getElementById('bmpFormat');
+        const canvasContainer = document.getElementById('canvas-container');
+        const displaySizeInput = document.getElementById('displaySizeInput');
         const gridPixelSizeInput = document.getElementById('gridPixelSize');
-        const changeSizeButton = document.getElementById('changeSize');
-        const brushSizeSelect = document.getElementById('brushSizeSelect');
+        
+        const penTool = document.getElementById('penTool');
+        const eraserTool = document.getElementById('eraserTool');
+        const penSizeSelect = document.getElementById('penSizeSelect');
+        const eraserSizeSelect = document.getElementById('eraserSizeSelect');
 
-        // --- 定数と変数 ---
-        const fixedCanvasSize = 400; 
-        canvas.width = fixedCanvasSize;
-        canvas.height = fixedCanvasSize;
+        const savedColorsDiv = document.getElementById('savedColors');
+        const colorCountSpan = document.getElementById('color-count');
 
-        let gridSize;
+        let currentDisplaySize = 600; 
+        let gridSize = 32;
         let cellSize;
         let currentColor = 'black';
         let isErasing = false;
         let isDrawing = false;
-        let shouldDrawGrid = true;
+        let currentZoom = 1.0;
+        
+        // サイズ設定を分離して保持
         let brushSize = 1;
-        let currentZoom = 1.0; 
+        let eraserSize = 3;
 
-        const COLOR_NONE = 0;
-        const COLOR_BLACK = 1;
-        const COLOR_RED = 2;
-        const COLOR_BLUE = 3;
-        const COLOR_GREEN = 4;
-        const COLOR_YELLOW = 5;
-        const COLOR_WHITE = 6;
-        let customColorIndex = 7;
-        let savedColors = {};
+        let pixelData = []; 
+        let savedColorsMap = new Map(); 
+        let customColorIndex = 100;
+        const MAX_COLORS = 45;
 
-        const paletteColors = {
-            'black': COLOR_BLACK, 'red': COLOR_RED, 'blue': COLOR_BLUE,
-            'green': COLOR_GREEN, 'yellow': COLOR_YELLOW, 'white': COLOR_WHITE
-        };
-
-        var pixelData = [];
-
-        // --- 基本機能 ---
-
-        function initializeGrid(newSize) {
-            gridSize = newSize;
-            cellSize = fixedCanvasSize / gridSize;
-            
-            pixelData = [];
-            for (let i = 0; i < gridSize; i++) {
-                pixelData[i] = [];
-                for (let j = 0; j < gridSize; j++) {
-                    pixelData[i][j] = COLOR_NONE;
-                }
-            }
-            imageSizeInput.value = newSize;
-            drawCanvas();
+        function init() {
+            currentDisplaySize = parseInt(displaySizeInput.value);
+            gridSize = parseInt(gridPixelSizeInput.value);
+            setupGridData(); 
+            updateCanvasView();
+            renderSavedColors(); 
         }
 
-        function drawGrid() {
-            ctx.strokeStyle = '#cccccc';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < gridSize; i++) {
-                for (let j = 0; j < gridSize; j++) {
-                    ctx.strokeRect(i * cellSize, j * cellSize, cellSize, cellSize);
-                }
-            }
-        }
-        
-        function getColorFromCode(pixelValue) {
-            if (pixelValue === COLOR_NONE) return 'transparent';
-            if (pixelValue === COLOR_BLACK) return 'black';
-            if (pixelValue === COLOR_RED) return 'red';
-            if (pixelValue === COLOR_BLUE) return 'blue';
-            if (pixelValue === COLOR_GREEN) return 'green';
-            if (pixelValue === COLOR_YELLOW) return 'yellow';
-            if (pixelValue === COLOR_WHITE) return 'white';
-            return savedColors[pixelValue] || 'transparent';
+        function setupGridData() {
+            pixelData = Array.from({ length: gridSize }, () => Array(gridSize).fill(0));
         }
 
+        function updateCanvasView() {
+            canvas.width = currentDisplaySize;
+            canvas.height = currentDisplaySize;
+            cellSize = currentDisplaySize / gridSize;
+            draw();
+        }
 
-        function drawCanvas() {
+        function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             for (let i = 0; i < gridSize; i++) {
                 for (let j = 0; j < gridSize; j++) {
-                    let color = getColorFromCode(pixelData[i][j]);
-                    ctx.fillStyle = color;
-                    ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                    const val = pixelData[i][j];
+                    if (val !== 0) {
+                        ctx.fillStyle = (typeof val === 'string') ? val : savedColorsMap.get(val);
+                        if (!ctx.fillStyle) ctx.fillStyle = "rgba(0,0,0,0)";
+                        ctx.fillRect(i * cellSize, j * cellSize, Math.ceil(cellSize), Math.ceil(cellSize));
+                    }
                 }
             }
-
-            if (shouldDrawGrid) {
-                drawGrid();
+            ctx.strokeStyle = "rgba(0,0,0,0.1)";
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= gridSize; i++) {
+                ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(canvas.width, i * cellSize); ctx.stroke();
             }
         }
 
-        initializeGrid(parseInt(gridPixelSizeInput.value));
-
-        // --- イベントリスナー ---
-        
-        // 表示倍率変更
-        canvasZoomSelect.addEventListener('change', (e) => {
-            currentZoom = parseFloat(e.target.value);
-            
-            canvasContainer.style.transform = `scale(${currentZoom})`;
-            
-            // プレースホルダーのサイズを、拡大後のキャンバスのサイズに合わせて調整
-            canvasPlaceholder.style.width = `${fixedCanvasSize * currentZoom}px`;
-            canvasPlaceholder.style.height = `${fixedCanvasSize * currentZoom}px`;
-        });
-
-        // ブラシサイズ変更
-        brushSizeSelect.addEventListener('change', (e) => {
-            brushSize = parseInt(e.target.value);
-        });
-
-        // パレット選択
-        palette.addEventListener('click', (e) => {
-            if (e.target.classList.contains('color')) {
-                currentColor = e.target.getAttribute('data-color');
-                isErasing = false;
-                
-                palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
-                e.target.classList.add('selected');
-                eraserButton.classList.remove('selected');
-                savedColorsDiv.querySelectorAll('button').forEach(b => b.removeAttribute('data-selected'));
-                
-                const existingTemp = document.querySelector('.temp-color');
-                if (existingTemp) existingTemp.remove();
-            }
-        });
-
-        // 保存済みカラー選択
-        savedColorsDiv.addEventListener('click', (e) => {
-             if (e.target.tagName === 'BUTTON' && e.target.dataset.colorIndex) {
-                 currentColor = parseInt(e.target.dataset.colorIndex);
-                 isErasing = false;
-                 
-                 palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
-                 eraserButton.classList.remove('selected');
-                 savedColorsDiv.querySelectorAll('button').forEach(b => b.removeAttribute('data-selected'));
-                 e.target.setAttribute('data-selected', 'true');
-                 
-                 const existingTemp = document.querySelector('.temp-color');
-                 if (existingTemp) existingTemp.remove();
-             }
-        });
-
-        // 消しゴム
-        eraserButton.addEventListener('click', () => {
-            isErasing = true;
-            eraserButton.classList.add('selected');
-            palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
-            savedColorsDiv.querySelectorAll('button').forEach(b => b.removeAttribute('data-selected'));
-            
-            const existingTemp = document.querySelector('.temp-color');
-            if (existingTemp) existingTemp.remove();
-        });
-
-        // 描画処理 (座標計算は前回修正済み)
         function paint(e) {
             const rect = canvas.getBoundingClientRect();
-            
-            // スケール適用前のキャンバス内部座標系(400x400)での正確な座標を得る。
-            const xOffset = (e.clientX - rect.left) / currentZoom;
-            const yOffset = (e.clientY - rect.top) / currentZoom;
-
-            const x = Math.floor(xOffset / cellSize);
-            const y = Math.floor(yOffset / cellSize);
-            
+            const x = Math.floor(((e.clientX - rect.left) / currentZoom) / cellSize);
+            const y = Math.floor(((e.clientY - rect.top) / currentZoom) / cellSize);
             if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
 
-            let colorCode;
+            const color = isErasing ? 0 : currentColor;
+            const currentSize = isErasing ? eraserSize : brushSize;
+            const offset = Math.floor(currentSize / 2);
+
+            for (let i = 0; i < currentSize; i++) {
+                for (let j = 0; j < currentSize; j++) {
+                    const tx = x + i - offset;
+                    const ty = y + j - offset;
+                    if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) pixelData[tx][ty] = color;
+                }
+            }
+            draw();
+        }
+
+        // --- ツール切り替えロジック ---
+        function setTool(erasing) {
+            isErasing = erasing;
             if (isErasing) {
-                colorCode = COLOR_NONE;
+                penTool.classList.remove('active');
+                eraserTool.classList.add('active');
+                document.querySelectorAll('.color-tile, .saved-tile').forEach(el => el.classList.remove('selected'));
             } else {
-                if (paletteColors[currentColor]) {
-                    colorCode = paletteColors[currentColor];
-                } else if (typeof currentColor === 'number' && savedColors[currentColor]) {
-                    colorCode = currentColor;
-                } else if (typeof currentColor === 'string' && currentColor.startsWith('rgb')) {
-                    alert('カスタムカラーは未保存です。塗るには「色を保存」を押して保存済みパレットから選択してください。');
-                    return;
-                } else {
-                    return;
-                }
-            }
-            
-            const halfBrush = Math.floor(brushSize / 2);
-            let updated = false;
-
-            for (let i = 0; i < brushSize; i++) {
-                for (let j = 0; j < brushSize; j++) {
-                    const drawX = x + i - halfBrush;
-                    const drawY = y + j - halfBrush;
-
-                    if (drawX >= 0 && drawX < gridSize && drawY >= 0 && drawY < gridSize) {
-                        if (pixelData[drawX][drawY] !== colorCode) {
-                            pixelData[drawX][drawY] = colorCode;
-                            updated = true;
-                        }
-                    }
-                }
-            }
-            
-            if (updated) {
-                 drawCanvas();
+                eraserTool.classList.remove('active');
+                penTool.classList.add('active');
+                // 筆に戻した時は直前の色（currentColor）を選択状態に戻す
+                refreshColorSelection();
             }
         }
 
-        // マウスイベント
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-            paint(e);
+        penTool.addEventListener('click', (e) => {
+            if(e.target === penSizeSelect) return; // セレクトボックス操作時は無視
+            setTool(false);
         });
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (isDrawing) {
-                paint(e);
+        eraserTool.addEventListener('click', (e) => {
+            if(e.target === eraserSizeSelect) return; // セレクトボックス操作時は無視
+            setTool(true);
+        });
+
+        penSizeSelect.addEventListener('change', (e) => brushSize = parseInt(e.target.value));
+        eraserSizeSelect.addEventListener('change', (e) => eraserSize = parseInt(e.target.value));
+
+        // --- マウスイベント ---
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; paint(e); });
+        canvas.addEventListener('mousemove', (e) => { if(isDrawing) paint(e); });
+        window.addEventListener('mouseup', () => isDrawing = false);
+
+        document.getElementById('applyDisplaySize').addEventListener('click', () => {
+            currentDisplaySize = parseInt(displaySizeInput.value);
+            updateCanvasView();
+        });
+
+        document.getElementById('canvasZoomSelect').addEventListener('change', (e) => {
+            currentZoom = parseFloat(e.target.value);
+            canvasContainer.style.transform = `scale(${currentZoom})`;
+        });
+
+        document.getElementById('resetCanvas').addEventListener('click', () => {
+            if(confirm("全消去して新しいキャンバスを作成しますか？")) {
+                gridSize = parseInt(gridPixelSizeInput.value);
+                setupGridData(); updateCanvasView();
             }
         });
 
-        canvas.addEventListener('mouseup', () => {
-            isDrawing = false;
+        document.getElementById('palette').addEventListener('click', (e) => {
+            if(e.target.classList.contains('color-tile')) {
+                selectColor(e.target.dataset.color, e.target);
+            }
         });
 
-        canvas.addEventListener('mouseout', () => {
-            isDrawing = false;
-        });
-        
-        // 描画サイズ変更
-        changeSizeButton.addEventListener('click', () => {
-            const newSize = parseInt(gridPixelSizeInput.value);
-            if (newSize >= 8 && newSize <= 64 && newSize % 8 === 0) {
-                if (confirm(`グリッドサイズを ${newSize}x${newSize} に変更すると、現在の描画内容は全て消去されます。よろしいですか？`)) {
-                    initializeGrid(newSize);
-                    alert(`${newSize}x${newSize}に変更しました。`);
+        function selectColor(colorId, element) {
+            setTool(false); // 色を選んだら自動的に筆ツールへ
+            currentColor = colorId;
+            refreshColorSelection();
+        }
+
+        function refreshColorSelection() {
+            document.querySelectorAll('.color-tile, .saved-tile').forEach(el => {
+                el.classList.remove('selected');
+                if (el.dataset.color === currentColor || el.dataset.id == currentColor) {
+                    el.classList.add('selected');
                 }
-            } else {
-                alert('グリッドサイズは8から64の範囲で、8の倍数で入力してください。');
-                gridPixelSizeInput.value = gridSize;
-            }
-        });
+            });
+        }
 
-        // ダウンロード処理 
-        downloadButton.addEventListener('click', () => {
-            shouldDrawGrid = false;
-            drawCanvas();
-
-            const downloadSize = parseInt(imageSizeInput.value);
-            
-            if (downloadSize < 1 || downloadSize > 1024 || isNaN(downloadSize)) {
-                alert('画像サイズは1から1024の範囲で入力してください。');
-                shouldDrawGrid = true;
-                drawCanvas();
+        document.getElementById('saveColor').addEventListener('click', () => {
+            if (savedColorsMap.size >= MAX_COLORS) {
+                alert(`最大${MAX_COLORS}個までです。`);
                 return;
             }
-
-            const downloadCanvas = document.createElement('canvas');
-            downloadCanvas.width = downloadSize;
-            downloadCanvas.height = downloadSize;
-            const downloadCtx = downloadCanvas.getContext('2d');
+            const r = document.getElementById('red').value;
+            const g = document.getElementById('green').value;
+            const b = document.getElementById('blue').value;
+            const col = `rgb(${r},${g},${b})`;
             
+            const id = customColorIndex++;
+            savedColorsMap.set(id, col);
+            renderSavedColors();
+            updateColorCount();
+        });
+
+        function renderSavedColors() {
+            savedColorsDiv.innerHTML = '';
+            const ids = Array.from(savedColorsMap.keys());
+            for(let i=0; i<MAX_COLORS; i++) {
+                const item = document.createElement('div');
+                item.className = 'saved-item';
+                
+                if(i < ids.length) {
+                    const id = ids[i];
+                    const color = savedColorsMap.get(id);
+                    const tile = document.createElement('div');
+                    tile.className = 'saved-tile';
+                    tile.dataset.id = id;
+                    tile.style.backgroundColor = color;
+                    if (currentColor === id && !isErasing) tile.classList.add('selected');
+                    tile.onclick = () => selectColor(id, tile);
+                    
+                    const del = document.createElement('div');
+                    del.className = 'del-btn';
+                    del.innerText = '×';
+                    del.onclick = (e) => { e.stopPropagation(); deleteColor(id); };
+                    
+                    item.appendChild(tile);
+                    item.appendChild(del);
+                }
+                savedColorsDiv.appendChild(item);
+            }
+        }
+
+        function deleteColor(id) {
+            savedColorsMap.delete(id);
+            if (currentColor === id) {
+                currentColor = 'black';
+                refreshColorSelection();
+            }
             for (let i = 0; i < gridSize; i++) {
                 for (let j = 0; j < gridSize; j++) {
-                    let color = getColorFromCode(pixelData[i][j]);
-                    if (color === 'transparent') {
-                        color = 'rgba(0,0,0,0)';
-                    }
-                    
-                    const x = Math.floor(i * downloadSize / gridSize);
-                    const y = Math.floor(j * downloadSize / gridSize);
-                    const width = Math.ceil((i + 1) * downloadSize / gridSize) - x;
-                    const height = Math.ceil((j + 1) * downloadSize / gridSize) - y;
-                    
-                    downloadCtx.fillStyle = color;
-                    downloadCtx.fillRect(x, y, width, height);
+                    if (pixelData[i][j] === id) pixelData[i][j] = 0;
                 }
             }
-
-            let selectedFormat = pngFormatRadio.checked ? 'image/png' : 'image/bmp';
-            let fileExtension = pngFormatRadio.checked ? '.png' : '.bmp';
-
-            const filename = (filenameInput.value.trim() === '' ? 'pixel_art' : filenameInput.value.trim()) + fileExtension;
-            const link = document.createElement('a');
-            
-            if (selectedFormat === 'image/bmp') {
-                 downloadCtx.globalCompositeOperation = 'destination-over';
-                 downloadCtx.fillStyle = 'white';
-                 downloadCtx.fillRect(0, 0, downloadSize, downloadSize);
-                 alert('BMP形式は一部ブラウザでサポートされていません。PNG形式を推奨します。');
-            }
-            
-            link.href = downloadCanvas.toDataURL(selectedFormat);
-            link.download = filename;
-            link.click();
-
-            shouldDrawGrid = true;
-            drawCanvas();
-        });
-
-        // カスタムカラー設定と保存 
-        function updateTempColorDisplay(colorString) {
-            const existingTemp = document.querySelector('.temp-color');
-            if (existingTemp) existingTemp.remove();
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.classList.add('temp-color');
-            const parent = setColorButton.closest('.control-group');
-            
-            tempDiv.innerHTML = `選択中: <span class="temp-color-box" style="background-color: ${colorString};"></span> ${colorString}`;
-            
-            parent.appendChild(tempDiv);
+            renderSavedColors();
+            updateColorCount();
+            draw();
         }
-        
-        setColorButton.addEventListener('click', () => {
-            const red = parseInt(redInput.value);
-            const green = parseInt(greenInput.value);
-            const blue = parseInt(blueInput.value);
 
-            if (red >= 0 && red <= 255 && green >= 0 && green <= 255 && blue >= 0 && blue <= 255) {
-                const colorString = `rgb(${red}, ${green}, ${blue})`;
-                currentColor = colorString;
-                
-                isErasing = false;
-                palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
-                eraserButton.classList.remove('selected');
-                savedColorsDiv.querySelectorAll('button').forEach(b => b.removeAttribute('data-selected'));
-                
-                updateTempColorDisplay(colorString);
-            } else {
-                alert('赤、緑、青の値は0から255の範囲で入力してください。');
-            }
-        });
+        function updateColorCount() {
+            colorCountSpan.innerText = `${savedColorsMap.size} / ${MAX_COLORS}`;
+        }
 
-        saveColorButton.addEventListener('click', () => {
-            const red = parseInt(redInput.value);
-            const green = parseInt(greenInput.value);
-            const blue = parseInt(blueInput.value);
-
-            if (red >= 0 && red <= 255 && green >= 0 && green <= 255 && blue >= 0 && blue <= 255) {
-                const colorString = `rgb(${red}, ${green}, ${blue})`;
-                
-                let existingIndex = Object.keys(savedColors).find(key => savedColors[key] === colorString);
-
-                if (existingIndex) {
-                    existingIndex = parseInt(existingIndex);
-                    currentColor = existingIndex;
-                    alert(`このカスタムカラーは既に保存済みです。`);
-                } else {
-                    currentColor = customColorIndex;
-                    savedColors[customColorIndex] = colorString;
-                    
-                    const button = document.createElement('button');
-                    button.style.backgroundColor = colorString;
-                    button.dataset.colorIndex = customColorIndex;
-                    button.setAttribute('data-selected', 'true');
-                    savedColorsDiv.appendChild(button);
-                    customColorIndex++;
-                    alert(`カスタムカラー「${colorString}」を保存しました。`);
-
-                    existingIndex = currentColor;
-                }
-
-                isErasing = false;
-                palette.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
-                eraserButton.classList.remove('selected');
-                
-                savedColorsDiv.querySelectorAll('button').forEach(b => {
-                    b.removeAttribute('data-selected');
-                    if (parseInt(b.dataset.colorIndex) === existingIndex) {
-                        b.setAttribute('data-selected', 'true');
+        document.getElementById('download').addEventListener('click', async () => {
+            const outSize = parseInt(document.getElementById('imageSize').value);
+            const format = document.getElementById('formatSelect').value;
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = outSize; outCanvas.height = outSize;
+            const oCtx = outCanvas.getContext('2d');
+            oCtx.imageSmoothingEnabled = false;
+            const unit = outSize / gridSize;
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    const val = pixelData[i][j];
+                    if(val !== 0) {
+                        oCtx.fillStyle = (typeof val === 'string') ? val : savedColorsMap.get(val);
+                        if (oCtx.fillStyle) oCtx.fillRect(i * unit, j * unit, Math.ceil(unit), Math.ceil(unit));
                     }
-                });
-                
-                const existingTemp = document.querySelector('.temp-color');
-                if (existingTemp) existingTemp.remove();
-                
+                }
+            }
+            const link = document.createElement('a');
+            link.download = document.getElementById('filename').value + "." + format;
+            if (format === 'ico') {
+                outCanvas.toBlob(async (blob) => {
+                    const buf = await blob.arrayBuffer();
+                    const view = new DataView(new ArrayBuffer(22 + buf.byteLength));
+                    view.setUint16(2, 1, true); view.setUint16(4, 1, true);
+                    view.setUint8(6, outSize >= 256 ? 0 : outSize);
+                    view.setUint8(7, outSize >= 256 ? 0 : outSize);
+                    view.setUint16(12, 32, true); view.setUint32(14, buf.byteLength, true);
+                    view.setUint32(18, 22, true);
+                    const final = new Uint8Array(view.buffer);
+                    final.set(new Uint8Array(buf), 22);
+                    link.href = URL.createObjectURL(new Blob([final], {type: 'image/x-icon'}));
+                    link.click();
+                }, 'image/png');
             } else {
-                alert('赤、緑、青の値は0から255の範囲で入力してください。');
+                link.href = outCanvas.toDataURL(`image/${format === 'bmp' ? 'bmp' : 'png'}`);
+                link.click();
             }
         });
 
-        // 初回実行時にキャンバス表示サイズを正しく設定
-        document.addEventListener('DOMContentLoaded', () => {
-            // 初期状態の 100% のサイズをプレースホルダーに適用
-            canvasPlaceholder.style.width = `${fixedCanvasSize * currentZoom}px`;
-            canvasPlaceholder.style.height = `${fixedCanvasSize * currentZoom}px`;
-        });
+        init();
     </script>
 </body>
 </html>
