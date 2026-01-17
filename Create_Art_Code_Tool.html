@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Create_Art_Code_Tool - Pixel Art Generator</title>
+    <style>
+        :root { 
+            --primary: #4361ee; 
+            --success: #2ec4b6; 
+            --bg: #f8f9fa; 
+            --accent: #e63946;
+            --border: #ced4da;
+            --text: #212529;
+            --gray: #6c757d;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif; 
+            background: var(--bg); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 850px; 
+        }
+        
+        h1 { font-size: 1.8rem; margin-top: 0; margin-bottom: 25px; text-align: center; color: var(--primary); border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+
+        /* 利用規約・注意事項セクション */
+        .policy-container {
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .policy-header {
+            background: #f1f3f5;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .policy-body {
+            padding: 20px;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: scroll;
+            color: #495057;
+            background-color: #fdfdfd;
+        }
+        .policy-body h2 { font-size: 1.1rem; color: var(--primary); margin: 20px 0 10px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .policy-body h3 { font-size: 0.95rem; color: var(--text); margin: 15px 0 5px 0; padding-left: 8px; border-left: 4px solid var(--primary); }
+        .policy-body ul { padding-left: 20px; margin-bottom: 15px; }
+        .policy-body li { margin-bottom: 5px; }
+
+        /* ガイドセクション */
+        .guide-section {
+            background: #e7f5ff;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary);
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+        .guide-section h4 { margin-top: 0; margin-bottom: 10px; color: var(--primary); font-size: 1rem; }
+        .guide-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 4px; overflow: hidden; }
+        .guide-table td { padding: 8px 12px; vertical-align: top; border: 1px solid #dee2e6; }
+        .guide-table b { color: #d63384; font-family: 'Consolas', monospace; }
+
+        textarea { 
+            width: 100%; 
+            height: 220px; 
+            font-family: 'Consolas', monospace; 
+            padding: 15px; 
+            border: 2px solid var(--border); 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 14px; 
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+        textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1); }
+        
+        .controls { display: flex; gap: 15px; margin-bottom: 25px; }
+        button { flex: 1; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: all 0.2s; font-size: 1rem; }
+        .btn-dl { background: var(--success); }
+        button:hover { filter: brightness(0.9); transform: translateY(-1px); }
+
+        .preview-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .preview-box { 
+            background-color: #ffffff;
+            background-image: linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), 
+                              linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            padding: 50px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border);
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+        }
+        canvas { 
+            image-rendering: pixelated; 
+            background: transparent; 
+            border: 1px solid #000;
+            max-width: 100%;
+        }
+        .status { font-size: 0.9rem; color: var(--gray); font-weight: bold; padding: 5px 15px; background: #eee; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Create_Art_Code_Tool</h1>
+
+    <div class="policy-container">
+        <div class="policy-header">Create_Art_Code_Tool ご利用規約と注意事項</div>
+        <div class="policy-body">
+            <p>本ツールをご利用いただく前に、必ずお読みください。本ツールを利用することで、これらの規約に同意したものとみなされます。<strong>本ツールは専用コードによって画像を生成するツールです。</strong></p>
+            
+            <h2>利用規約</h2>
+            <h3>利用範囲</h3>
+            <p>本規約を遵守することを条件に、本ツールを無償でご利用いただけます。</p>
+
+            <h3>著作権</h3>
+            <ul>
+                <li>プログラムコードおよびデザインの著作権は作者に帰属します。</li>
+                <li>作成された作品の著作権は利用者に帰属しますが、第三者の権利を侵害しない内容に限ります。</li>
+            </ul>
+
+            <h3>禁止事項</h3>
+            <ul>
+                <li><strong>第三者の知的財産権（著作権、商標権等）、肖像権、プライバシーを侵害する行為。</strong></li>
+                <li>公序良俗に反するコンテンツの作成、およびそれを用いた嫌がらせ行為。</li>
+                <li>本ツールの解析、改ざん、またはサーバーや動作に過度な負荷をかける行為。</li>
+                <li>法令に違反する行為、および犯罪に結びつく可能性のある行為。</li>
+            </ul>
+
+            <h2>注意事項</h2>
+            <ul>
+                <li><strong>画像形式:</strong> PNG, BMP, ICO形式のみ対応しています。</li>
+                <li><strong>リアルタイム更新:</strong> 入力されたコードは即座にプレビューへ反映されます。</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="guide-section">
+        <h4>📝 入力コードの仕様説明</h4>
+        <table class="guide-table">
+            <tr><td><b>Name{...}</b></td><td>保存ファイル名。</td></tr>
+            <tr><td><b>Size{X:n,Y:n}</b></td><td>ピクセルサイズ。</td></tr>
+            <tr><td><b>Type{...}</b></td><td>形式（<b>PNG</b>, <b>BMP</b>, <b>ICO</b>）。</td></tr>
+            <tr><td><b>C{...}</b></td><td>描画データ。<code>{色:{範囲1},{範囲2},...}</code>。</td></tr>
+            <tr><td><b>inv</b></td><td><b>透明指定（消しゴム）。</b> <code>{inv:{範囲}}</code> で指定した場所を透明に削ります。色を塗った後に重ねて「穴」を開けることが可能です。</td></tr>
+            <tr><td><b>コードの例</b></td><td><code>Name{sample_art},Size{X:16,Y:16},Type{PNG},C{{000000:{0-15,0-15}},{inv:{4-11,4-11}}}</code></td></tr>
+        </table>
+    </div>
+
+    <div class="controls">
+        <button class="btn-dl" onclick="templete()">テンプレートを入力する</button>
+    </div>
+
+    <textarea id="codeInput" spellcheck="false" oninput="render()" placeholder="コードを入力..."></textarea>
+
+    <div class="controls">
+        <button class="btn-dl" onclick="download()">画像を保存</button>
+    </div>
+
+    <div class="preview-area">
+        <div class="preview-box">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div id="status" class="status">待機中...</div>
+    </div>
+</div>
+
+<script>
+    let saveName = "pixel-art";
+    let saveFormat = "png";
+
+    function render() {
+        const input = document.getElementById('codeInput').value;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+
+        if (!input.trim()) {
+            status.innerText = "コードを入力してください";
+            return;
+        }
+
+        try {
+            const nameMatch = input.match(/Name\{([^}]+)\}/);
+            saveName = nameMatch ? nameMatch[1].trim() : "pixel-art";
+
+            const typeMatch = input.match(/Type\{([^}]+)\}/);
+            saveFormat = typeMatch ? typeMatch[1].trim().toLowerCase() : "png";
+            
+            const sizeMatch = input.match(/Size\{X:(\d+),Y:(\d+)\}/);
+            if (!sizeMatch) throw new Error("Size指定が見つかりません");
+            
+            const w = parseInt(sizeMatch[1]);
+            const h = parseInt(sizeMatch[2]);
+            canvas.width = w;
+            canvas.height = h;
+            
+            const displayWidth = Math.min(w * 20, 450);
+            canvas.style.width = displayWidth + "px";
+            canvas.style.height = "auto";
+
+            ctx.clearRect(0, 0, w, h);
+
+            const cContentMatch = input.match(/C\{(.+)\}/s);
+            if (!cContentMatch) throw new Error("描画データ(C)が必要です");
+            const cContent = cContentMatch[1];
+
+            // 色ブロックの抽出（inv含む）
+            const blocks = cContent.match(/\{(?:[a-fA-F0-9]{6}|inv):(?:\{[^\}]+\},?)+\}/g);
+
+            if (blocks) {
+                blocks.forEach(block => {
+                    const typePartMatch = block.match(/\{([a-fA-F0-9]{6}|inv):/);
+                    if (!typePartMatch) return;
+                    const blockType = typePartMatch[1];
+
+                    if (blockType === "inv") {
+                        // 透明化（消しゴムモード）
+                        ctx.globalCompositeOperation = 'destination-out';
+                    } else {
+                        // 通常描画
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.fillStyle = `#${blockType}`;
+                    }
+
+                    const ranges = block.match(/\{(\d+-\d+,\d+-\d+)\}/g);
+                    if (ranges) {
+                        ranges.forEach(r => {
+                            const coords = r.match(/(\d+)-(\d+),(\d+)-(\d+)/);
+                            if (coords) {
+                                const x1 = parseInt(coords[1]);
+                                const x2 = parseInt(coords[2]);
+                                const y1 = parseInt(coords[3]);
+                                const y2 = parseInt(coords[4]);
+                                ctx.fillRect(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+                            }
+                        });
+                    }
+                });
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+            status.innerText = `形式: ${saveFormat.toUpperCase()} | ${w}x${h}px | 更新中...`;
+            
+        } catch (e) {
+            status.innerHTML = `<span style="color:#e63946">解析中... (${e.message})</span>`;
+        }
+    }
+
+    // --- 各形式のバイナリ生成 ---
+    function createBMP(canvas) {
+        const w = canvas.width, h = canvas.height;
+        const imageData = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+        const fileSize = 54 + (w * h * 4);
+        const buffer = new ArrayBuffer(fileSize);
+        const view = new DataView(buffer);
+        view.setUint16(0, 0x424D, false); // BM
+        view.setUint32(2, fileSize, true);
+        view.setUint32(10, 54, true);
+        view.setUint32(14, 40, true);
+        view.setInt32(18, w, true);
+        view.setInt32(22, -h, true);
+        view.setUint16(26, 1, true);
+        view.setUint16(28, 32, true);
+        for (let i = 0; i < w * h; i++) {
+            const offset = 54 + (i * 4);
+            view.setUint8(offset, imageData[i * 4 + 2]); // B
+            view.setUint8(offset + 1, imageData[i * 4 + 1]); // G
+            view.setUint8(offset + 2, imageData[i * 4]); // R
+            view.setUint8(offset + 3, imageData[i * 4 + 3]); // A
+        }
+        return new Blob([buffer], { type: "image/bmp" });
+    }
+
+    async function createICO(canvas) {
+        return new Promise(resolve => {
+            canvas.toBlob(blob => {
+                blob.arrayBuffer().then(pngBuffer => {
+                    const buffer = new ArrayBuffer(22 + pngBuffer.byteLength);
+                    const view = new DataView(buffer);
+                    view.setUint16(0, 0, true);
+                    view.setUint16(2, 1, true);
+                    view.setUint16(4, 1, true);
+                    view.setUint8(6, canvas.width >= 256 ? 0 : canvas.width);
+                    view.setUint8(7, canvas.height >= 256 ? 0 : canvas.height);
+                    view.setUint16(12, 32, true);
+                    view.setUint32(14, pngBuffer.byteLength, true);
+                    view.setUint32(18, 22, true);
+                    new Uint8Array(buffer).set(new Uint8Array(pngBuffer), 22);
+                    resolve(new Blob([buffer], { type: "image/x-icon" }));
+                });
+            }, "image/png");
+        });
+    }
+
+    async function download() {
+        const canvas = document.getElementById('canvas');
+        if (canvas.width === 0) return;
+        let blob, ext = saveFormat;
+        if (saveFormat === "bmp") blob = createBMP(canvas);
+        else if (saveFormat === "ico") blob = await createICO(canvas);
+        else {
+            const link = document.createElement('a');
+            link.download = `${saveName}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            return;
+        }
+        const link = document.createElement('a');
+        link.download = `${saveName}.${ext}`;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    function templete() {
+        const input = document.getElementById('codeInput');
+        const templeteText = "Name{},Size{X:,Y:},Type{PNG},C{{:{,}}}";
+
+        if(input.value != ""){
+            if(confirm('入力内容が変更されますがよろしいですか？')){
+                input.value = templeteText;
+            }
+        }
+        else{
+            input.value = templeteText;
+        }
+    }
+
+    window.onload = rvalueender;
+</script>
+
+</body>
+</html>
