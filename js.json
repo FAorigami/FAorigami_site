@@ -1,0 +1,108 @@
+{
+  "javascript_encyclopedia": {
+    "declarations_and_keywords": [
+      { "keyword": "let", "description": "再代入可能なブロックスコープ変数を宣言。" },
+      { "keyword": "const", "description": "再代入不可能なブロックスコープ定数を宣言。" },
+      { "keyword": "var", "description": "関数スコープまたはグローバルスコープの変数を宣言。" },
+      { "keyword": "function", "description": "関数を宣言。" },
+      { "keyword": "class", "description": "クラスを宣言。" },
+      { "keyword": "extends", "description": "クラスの継承を指定。" },
+      { "keyword": "constructor", "description": "クラスのインスタンス化時に実行されるメソッド。" },
+      { "keyword": "super", "description": "親クラスの参照。" },
+      { "keyword": "static", "description": "クラスの静的メソッド・プロパティを定義。" },
+      { "keyword": "get", "description": "ゲッター（プロパティ取得用関数）を定義。" },
+      { "keyword": "set", "description": "セッター（プロパティ設定用関数）を定義。" },
+      { "keyword": "this", "description": "現在の実行コンテキストを参照。" },
+      { "keyword": "new", "description": "オブジェクトのインスタンスを生成。" },
+      { "keyword": "target", "description": "new.targetとして、newによって呼び出されたかを確認。" }
+    ],
+    "control_flow": [
+      { "keyword": "if", "description": "条件分岐（真の場合）。" },
+      { "keyword": "else", "description": "条件分岐（偽の場合）。" },
+      { "keyword": "switch", "description": "多方向分岐。" },
+      { "keyword": "case", "description": "switch文内の選択肢。" },
+      { "keyword": "default", "description": "switch文内の既定値。" },
+      { "keyword": "for", "description": "標準的なループ。" },
+      { "keyword": "for...in", "description": "オブジェクトのプロパティを反復。" },
+      { "keyword": "for...of", "description": "反復可能オブジェクト（配列等）を反復。" },
+      { "keyword": "for await...of", "description": "非同期イテレータを反復。" },
+      { "keyword": "while", "description": "前判定ループ。" },
+      { "keyword": "do...while", "description": "後判定ループ。" },
+      { "keyword": "break", "description": "ループまたはブロックの脱出。" },
+      { "keyword": "continue", "description": "ループの現在の反復をスキップ。" },
+      { "keyword": "return", "description": "関数の戻り値を指定し終了。" },
+      { "keyword": "yield", "description": "ジェネレーター関数の実行一時停止と値の返却。" },
+      { "keyword": "yield*", "description": "別のジェネレーターまたは反復可能オブジェクトに委譲。" },
+      { "keyword": "try", "description": "例外監視ブロック。" },
+      { "keyword": "catch", "description": "例外処理ブロック。" },
+      { "keyword": "finally", "description": "例外の有無に関わらず実行するブロック。" },
+      { "keyword": "throw", "description": "例外を明示的にスロー。" }
+    ],
+    "asynchronous_programming": [
+      { "keyword": "async", "description": "非同期関数を宣言。" },
+      { "keyword": "await", "description": "Promiseの解決を待機。" },
+      { "object": "Promise", "description": "非同期処理の最終的な完了（または失敗）とその結果を表現。" }
+    ],
+    "operators": [
+      { "operator": "typeof", "description": "データの型を確認。" },
+      { "operator": "instanceof", "description": "特定のコンストラクタのインスタンスか確認。" },
+      { "operator": "in", "description": "プロパティの存在確認。" },
+      { "operator": "delete", "description": "オブジェクトのプロパティを削除。" },
+      { "operator": "void", "description": "式を評価しundefinedを返す。" },
+      { "operator": "spread/rest (...)", "description": "展開または集約を行う。" },
+      { "operator": "optional chaining (?.)", "description": "null/undefinedチェックを伴うプロパティアクセス。" },
+      { "operator": "nullish coalescing (??)", "description": "nullまたはundefinedの場合の既定値を指定。" }
+    ],
+    "built_in_objects_and_primitives": [
+      { "object": "Object", "description": "すべてのオブジェクトの基底。" },
+      { "object": "Array", "description": "順序付きリスト。" },
+      { "object": "String", "description": "文字列。" },
+      { "object": "Number", "description": "数値。" },
+      { "object": "BigInt", "description": "任意精度の整数。" },
+      { "object": "Boolean", "description": "真偽値。" },
+      { "object": "Symbol", "description": "一意で不変なプリミティブ値。" },
+      { "object": "Math", "description": "数学定数と関数。" },
+      { "object": "Date", "description": "日付と時刻。" },
+      { "object": "RegExp", "description": "正規表現。" },
+      { "object": "Map", "description": "キーと値のペアのコレクション。" },
+      { "object": "Set", "description": "重複のない値のコレクション。" },
+      { "object": "WeakMap", "description": "キーを弱参照するMap。" },
+      { "object": "WeakSet", "description": "値を弱参照するSet。" },
+      { "object": "ArrayBuffer", "description": "生のバイナリデータのバッファ。" },
+      { "object": "DataView", "description": "ArrayBufferを読み書きする低レベルインターフェース。" },
+      { "object": "JSON", "description": "JSON形式のパースと文字列化。" },
+      { "object": "Reflect", "description": "メタプログラミング用のメソッドを提供。" },
+      { "object": "Proxy", "description": "オブジェクトの基本操作をカスタマイズするための代理人。" }
+    ],
+    "error_types": [
+      { "object": "Error", "description": "一般的なエラー。" },
+      { "object": "AggregateError", "description": "複数のエラーを1つにまとめたもの。" },
+      { "object": "EvalError", "description": "eval()に関連するエラー。" },
+      { "object": "RangeError", "description": "数値が許容範囲外の時のエラー。" },
+      { "object": "ReferenceError", "description": "存在しない変数を参照した時のエラー。" },
+      { "object": "SyntaxError", "description": "構文エラー。" },
+      { "object": "TypeError", "description": "期待される型ではない時のエラー。" },
+      { "object": "URIError", "description": "URI操作関数が不正に使用された時のエラー。" }
+    ],
+    "web_and_dom_api": [
+      { "object": "window", "description": "ブラウザのグローバルオブジェクト。" },
+      { "object": "document", "description": "DOMツリーのルート。" },
+      { "object": "navigator", "description": "ブラウザとユーザー情報。" },
+      { "object": "location", "description": "現在のURL情報と操作。" },
+      { "object": "history", "description": "閲覧履歴操作。" },
+      { "object": "screen", "description": "ディスプレイ情報。" },
+      { "object": "localStorage", "description": "永続的なローカル保存。" },
+      { "object": "sessionStorage", "description": "セッション中のみの保存。" },
+      { "object": "fetch()", "description": "ネットワークリソース取得。" },
+      { "object": "console", "description": "デバッグログ出力。" },
+      { "object": "setTimeout()", "description": "一定時間後の処理実行。" },
+      { "object": "setInterval()", "description": "一定間隔ごとの処理実行。" },
+      { "object": "requestAnimationFrame()", "description": "次回の画面描画前の処理実行。" }
+    ],
+    "modules": [
+      { "keyword": "import", "description": "モジュールの読み込み。" },
+      { "keyword": "export", "description": "モジュールの書き出し。" },
+      { "keyword": "import.meta", "description": "現在のモジュールのコンテキストメタデータ。" }
+    ]
+  }
+}
