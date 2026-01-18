@@ -110,6 +110,7 @@
     <button id="addMeasBtn" class="btn">+ 小節追加</button>
     <button id="remMeasBtn" class="btn danger">- 小節削除</button>
     <div style="flex:1"></div>
+    <button id="Tool_Terms_of_Use_Btn" class="btn">利用規約</button>
     <button id="saveBtn" class="btn">保存</button>
     <button id="loadBtn" class="btn">読込</button>
     <button id="exportWavBtn" class="btn" style="background:var(--accent); color:black; border:none;">WAV書き出し</button>
@@ -436,6 +437,7 @@
         state.playing = !state.playing;
         if (state.playing) { state.nextTime = audioCtx.currentTime; scheduler(); }
     };
+    document.getElementById('Tool_Terms_of_Use_Btn').onclick = () => window.open('https://faorigami.github.io/FAorigami_site/Tool_Terms_of_Use.html', '_blank');
     document.getElementById('saveBtn').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], { type: 'application/json' })); a.download = "project.json"; a.click(); };
     document.getElementById('loadBtn').onclick = () => document.getElementById('fileIn').click();
     document.getElementById('fileIn').onchange = (e) => {
