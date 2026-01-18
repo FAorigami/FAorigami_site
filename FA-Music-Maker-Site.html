@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>FA Music Maker Site</title>
+    <style>
+        :root {
+            --bg: #0b0b0e;
+            --panel: #16161a;
+            --accent: #06b6d4;
+            --border: #2a2a30;
+            --text: #e4e4e7;
+            --playing: #ef4444;
+            --selection: rgba(6, 182, 212, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg); color: var(--text); margin: 0;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            user-select: none; -webkit-user-select: none;
+        }
+
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 10000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer;
+        }
+        #boot-screen h1 { color: var(--accent); font-size: 2rem; margin-bottom: 20px; }
+        #boot-screen p { color: #888; border: 1px solid #444; padding: 10px 20px; border-radius: 50px; }
+
+        .toolbar {
+            background: var(--panel); padding: 12px 20px;
+            display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border); z-index: 1000;
+        }
+
+        .btn {
+            background: #27272a; color: white; border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;
+        }
+        .btn:hover { background: #3f3f46; }
+        .btn.danger { color: #ef4444; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .mixer { display: flex; background: #000; padding: 8px 20px 0; gap: 6px; overflow-x: auto; }
+        .track {
+            min-width: 90px; padding: 10px; background: #1a1a1a; border-radius: 6px 6px 0 0;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px;
+            border: 1px solid transparent; transition: 0.2s;
+        }
+        .track.active { background: var(--panel); border: 1px solid var(--border); border-bottom: none; }
+        .track-label { font-size: 10px; font-weight: 800; color: #71717a; text-transform: uppercase; }
+        .track.active .track-label { color: var(--accent); }
+        .vol-slider { width: 60px; height: 4px; accent-color: var(--accent); cursor: pointer; }
+
+        .editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .timeline { display: flex; background: #111; height: 35px; border-bottom: 1px solid var(--border); }
+        .spacer { width: 80px; border-right: 1px solid var(--border); flex-shrink: 0; }
+        .ruler-container { flex: 1; overflow: hidden; position: relative; }
+        .ruler { position: absolute; height: 100%; cursor: pointer; background: #111; }
+        .marker { position: absolute; height: 100%; border-left: 1px solid #333; font-size: 10px; color: #555; padding: 4px; pointer-events: none; }
+
+        .main-work { flex: 1; display: flex; overflow: hidden; }
+        .piano-keys { width: 80px; background: #000; border-right: 1px solid var(--border); position: relative; overflow: hidden; flex-shrink: 0; }
+        .key-list { position: absolute; width: 100%; }
+        .piano-key { height: 24px; border-bottom: 1px solid #111; font-size: 9px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; color: #333; }
+        .piano-key.black { background: #080808; }
+
+        .viewport { flex: 1; overflow: auto; position: relative; background: #0a0a0c; }
+        .grid {
+            position: relative;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 24px;
+        }
+
+        .note { position: absolute; height: 22px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.15); pointer-events: none; box-sizing: border-box; }
+        .note.selected { border: 2px solid #fff; z-index: 50; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .note.ghost { opacity: 0.15; }
+
+        #playhead { position: absolute; top: 0; width: 2px; height: 100%; background: var(--playing); z-index: 100; pointer-events: none; box-shadow: 0 0 8px var(--playing); }
+        #selection-overlay { position: absolute; background: var(--selection); border: 1px solid var(--accent); display: none; z-index: 200; pointer-events: none; }
+
+        #ctx-menu { 
+            position: fixed; background: #1c1c21; border: 1px solid #3f3f46; 
+            border-radius: 6px; padding: 6px 0; display: none; z-index: 5000; 
+            min-width: 180px; box-shadow: 0 15px 30px rgba(0,0,0,0.7); 
+        }
+        .menu-opt { padding: 8px 16px; font-size: 12px; color: #d4d4d8; cursor: pointer; display: flex; justify-content: space-between; }
+        .menu-opt:hover { background: var(--accent); color: black; }
+        .menu-sep { height: 1px; background: #333; margin: 4px 0; }
+        .menu-hint { color: #666; font-size: 10px; margin-left: 10px; }
+
+        .info-bar { background: #000; padding: 6px 20px; font-size: 11px; color: #52525b; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block; margin-right: 5px; }
+        .status-dot.on { background: #22c55e; }
+        #exportStatus { color: var(--accent); font-weight: bold; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<div id="boot-screen" onclick="initAudioEngine()">
+    <h1>FA Music Maker Site</h1>
+    <p>CLICK TO START ENGINE</p>
+</div>
+
+<div class="toolbar">
+    <button id="playBtn" class="btn">再生 / 停止</button>
+    <div style="font-size: 11px; color: #888;">BPM <input type="number" id="bpmIn" value="120" step="1" min="1" max="300" style="width:45px; background:#000; color:var(--accent); border:1px solid #333; padding:2px; border-radius:4px;"></div>
+    <div style="width: 1px; height: 20px; background: #333;"></div>
+    <button id="addMeasBtn" class="btn">+ 小節追加</button>
+    <button id="remMeasBtn" class="btn danger">- 小節削除</button>
+    <div style="flex:1"></div>
+    <button id="saveBtn" class="btn">保存</button>
+    <button id="loadBtn" class="btn">読込</button>
+    <button id="exportWavBtn" class="btn" style="background:var(--accent); color:black; border:none;">WAV書き出し</button>
+</div>
+
+<div class="mixer" id="mixer"></div>
+
+<div class="editor">
+    <div class="timeline">
+        <div class="spacer"></div>
+        <div class="ruler-container" id="rulerScroll"><div class="ruler" id="ruler"></div></div>
+    </div>
+    <div class="main-work">
+        <div class="piano-keys"><div class="key-list" id="keyList"></div></div>
+        <div class="viewport" id="viewport">
+            <div class="grid" id="grid">
+                <div id="playhead"></div>
+                <div id="selection-overlay"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="ctx-menu">
+    <div class="menu-opt" onclick="menuCopy()"><span>コピー</span><span class="menu-hint">Ctrl+C</span></div>
+    <div class="menu-opt" onclick="menuPaste()"><span>貼り付け</span><span class="menu-hint">Ctrl+V</span></div>
+    <div class="menu-sep"></div>
+    <div class="menu-opt" onclick="menuShift(0, -12)"><span>1オクターブ上げる</span></div>
+    <div class="menu-opt" onclick="menuShift(0, 12)"><span>1オクターブ下げる</span></div>
+    <div class="menu-sep"></div>
+    <div class="menu-opt" onclick="menuDel()" style="color:#ef4444;"><span>削除</span><span class="menu-hint">Del</span></div>
+    <div class="menu-opt" onclick="menuClear()"><span>全消去</span></div>
+</div>
+
+<div class="info-bar">
+    <div><span id="dot" class="status-dot"></span> <span id="audioStatus">Offline</span> | <span id="exportStatus">Ready</span></div>
+    <div id="posInfo">Step: 0 | Total: 128</div>
+</div>
+
+<input type="file" id="fileIn" style="display:none" accept=".json">
+
+<script>
+    const NOTES = ["B","A#","A","G#","G","F#","F","E","D#","D","C#","C"];
+    const OCTAVES = [8,7,6,5,4,3,2,1];
+    const SCALE = []; OCTAVES.forEach(o => NOTES.forEach(n => SCALE.push(n + o)));
+
+    const FREQS = {};
+    SCALE.forEach((name) => {
+        const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        const step = names.indexOf(name.replace(/[0-9]/, ''));
+        const oct = parseInt(name.match(/[0-9]/)[0]);
+        FREQS[name] = 440 * Math.pow(2, ((oct * 12 + step) - 57) / 12);
+    });
+
+    const STEP_W = 40, NOTE_H = 24;
+    const INSTS = [
+        { id:0, name: "Piano", color: "#3ae374", v: 0.5 },
+        { id:1, name: "Guitar", color: "#fffa65", v: 0.4 },
+        { id:2, name: "Strings", color: "#ff9f43", v: 0.3 },
+        { id:3, name: "Bass", color: "#ee5253", v: 0.6 },
+        { id:4, name: "Synth", color: "#00d2d3", v: 0.3 },
+        { id:5, name: "Drums", color: "#54a0ff", v: 0.7 },
+        { id:6, name: "Cymbal", color: "#5f27cd", v: 0.3 }
+    ];
+
+    let state = {
+        bpm: 120, currentTrack: 0, totalSteps: 128,
+        tracks: INSTS.map(() => []),
+        playing: false, currentStep: 0, selection: [],
+        menuOpen: false, nextTime: 0
+    };
+
+    let clipboard = [];
+    let audioCtx = null;
+    const elGrid = document.getElementById('grid'), elViewport = document.getElementById('viewport');
+    const elRuler = document.getElementById('ruler'), elMenu = document.getElementById('ctx-menu');
+    const elPlayhead = document.getElementById('playhead');
+    const elBpmInput = document.getElementById('bpmIn');
+    const elExportStatus = document.getElementById('exportStatus');
+
+    elBpmInput.oninput = (e) => {
+        const val = parseInt(e.target.value);
+        if (val && val > 0) {
+            state.bpm = val;
+            if (state.playing && audioCtx) state.nextTime = audioCtx.currentTime;
+        }
+    };
+
+    function initAudioEngine() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        document.getElementById('boot-screen').style.display = 'none';
+        document.getElementById('audioStatus').innerText = "Online";
+        document.getElementById('dot').classList.add('on');
+    }
+
+    function playNote(ctx, tIdx, nIdx, len, time) {
+        if (!ctx || nIdx < 0) return;
+        const freq = FREQS[SCALE[nIdx]];
+        const inst = INSTS[tIdx];
+        const dur = len * (60 / state.bpm / 4);
+        const g = ctx.createGain(); g.connect(ctx.destination);
+        const osc = ctx.createOscillator();
+        osc.type = (tIdx === 3) ? 'square' : (tIdx === 0 ? 'triangle' : 'sine');
+        osc.frequency.setValueAtTime(freq, time);
+        g.gain.setValueAtTime(0, time);
+        g.gain.linearRampToValueAtTime(inst.v, time + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.01, time + dur);
+        osc.connect(g); osc.start(time); osc.stop(time + dur + 0.1);
+    }
+
+    function scheduler() {
+        if (!state.playing || !audioCtx) return;
+        while (state.nextTime < audioCtx.currentTime + 0.1) {
+            state.tracks.forEach((track, i) => {
+                track.forEach(n => { if (n.step === state.currentStep) playNote(audioCtx, i, n.noteIdx, n.length, state.nextTime); });
+            });
+            const secondsPerStep = 60 / state.bpm / 4;
+            state.nextTime += secondsPerStep;
+            state.currentStep = (state.currentStep + 1) % state.totalSteps;
+            updatePlayhead();
+        }
+        requestAnimationFrame(scheduler);
+    }
+
+    function updatePlayhead() {
+        elPlayhead.style.left = (state.currentStep * STEP_W) + 'px';
+        document.getElementById('posInfo').innerText = `Step: ${state.currentStep} | Total: ${state.totalSteps}`;
+    }
+
+    function getMousePos(e) {
+        const rect = elGrid.getBoundingClientRect();
+        return { gx: Math.floor((e.clientX - rect.left) / STEP_W), gy: Math.floor((e.clientY - rect.top) / NOTE_H) };
+    }
+
+    elRuler.onmousedown = (e) => {
+        const rect = elRuler.getBoundingClientRect();
+        const gx = Math.floor((e.clientX - rect.left) / STEP_W);
+        state.currentStep = Math.max(0, Math.min(gx, state.totalSteps - 1));
+        if (audioCtx) state.nextTime = audioCtx.currentTime;
+        updatePlayhead();
+    };
+
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'c') { e.preventDefault(); menuCopy(); }
+        if (e.ctrlKey && e.key === 'v') { e.preventDefault(); menuPaste(); }
+        if (e.key === 'Delete' || e.key === 'Backspace') { menuDel(); }
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const { gx, gy } = getMousePos(e);
+        const track = state.tracks[state.currentTrack];
+        const foundIdx = track.findIndex(n => n.noteIdx === gy && gx >= n.step && gx < n.step + n.length);
+        if (e.ctrlKey) {
+            state.menuOpen = true;
+            elMenu.style.display = 'block';
+            elMenu.style.left = e.clientX + 'px'; elMenu.style.top = e.clientY + 'px';
+        } else if (foundIdx !== -1) {
+            state.tracks[state.currentTrack].splice(foundIdx, 1);
+            state.selection = []; render();
+        }
+    });
+
+    let isDragging = false, dragMode = null, lastGX, lastGY, startGX, startGY;
+
+    elGrid.onmousedown = (e) => {
+        if (!audioCtx) initAudioEngine();
+        if (state.menuOpen) { closeMenu(); return; }
+        if (e.button === 2) return;
+        const { gx, gy } = getMousePos(e);
+        if (gx >= state.totalSteps) return;
+        const foundIdx = state.tracks[state.currentTrack].findIndex(n => n.noteIdx === gy && gx >= n.step && gx < n.step + n.length);
+        if (e.ctrlKey) {
+            dragMode = 'select'; startGX = gx; startGY = gy;
+            document.getElementById('selection-overlay').style.display = 'block';
+        } else if (foundIdx !== -1) {
+            state.selection = [foundIdx];
+            const rect = elGrid.getBoundingClientRect();
+            const xInNote = (e.clientX - rect.left) - (state.tracks[state.currentTrack][foundIdx].step * STEP_W);
+            dragMode = (xInNote > state.tracks[state.currentTrack][foundIdx].length * STEP_W - 10) ? 'resize' : 'move';
+        } else {
+            state.selection = [];
+            state.tracks[state.currentTrack].push({ step: gx, noteIdx: gy, length: 1 });
+            state.selection = [state.tracks[state.currentTrack].length - 1];
+            dragMode = 'draw';
+            playNote(audioCtx, state.currentTrack, gy, 0.5, audioCtx.currentTime);
+        }
+        lastGX = gx; lastGY = gy; isDragging = true; render();
+    };
+
+    window.onmousemove = (e) => {
+        if (!isDragging) return;
+        const { gx, gy } = getMousePos(e);
+        if (dragMode === 'select') {
+            const overlay = document.getElementById('selection-overlay');
+            const x1 = Math.min(gx, startGX) * STEP_W, x2 = (Math.max(gx, startGX) + 1) * STEP_W;
+            const y1 = Math.min(gy, startGY) * NOTE_H, y2 = (Math.max(gy, startGY) + 1) * NOTE_H;
+            overlay.style.left = x1 + 'px'; overlay.style.top = y1 + 'px'; overlay.style.width = (x2 - x1) + 'px'; overlay.style.height = (y2 - y1) + 'px';
+            state.selection = [];
+            state.tracks[state.currentTrack].forEach((n, i) => {
+                if (n.step <= Math.max(gx, startGX) && n.step + n.length > Math.min(gx, startGX) && n.noteIdx >= Math.min(gy, startGY) && n.noteIdx <= Math.max(gy, startGY)) state.selection.push(i);
+            });
+        } else if (gx !== lastGX || gy !== lastGY) {
+            const dx = gx - lastGX, dy = gy - lastGY;
+            state.selection.forEach(idx => {
+                const n = state.tracks[state.currentTrack][idx];
+                if (dragMode === 'move') {
+                    const nextStep = Math.max(0, n.step + dx);
+                    if (nextStep + n.length <= state.totalSteps) n.step = nextStep;
+                    n.noteIdx = Math.max(0, Math.min(SCALE.length - 1, n.noteIdx + dy));
+                } else if (dragMode === 'draw' || dragMode === 'resize') {
+                    const targetGX = Math.min(gx, state.totalSteps - 1);
+                    n.length = Math.max(1, targetGX - n.step + 1);
+                }
+            });
+            lastGX = gx; lastGY = gy;
+        }
+        render();
+    };
+
+    window.onmouseup = () => { isDragging = false; document.getElementById('selection-overlay').style.display = 'none'; };
+
+    function closeMenu() { elMenu.style.display = 'none'; state.menuOpen = false; }
+    
+    function menuCopy() { 
+        if (state.selection.length === 0) return;
+        const track = state.tracks[state.currentTrack];
+        const minStep = Math.min(...state.selection.map(i => track[i].step));
+        clipboard = state.selection.map(i => ({ ...track[i], relStep: track[i].step - minStep }));
+        closeMenu();
+    }
+
+    function menuPaste() {
+        if (clipboard.length === 0) return;
+        const news = [];
+        clipboard.forEach(clipNote => {
+            const targetStep = state.currentStep + clipNote.relStep;
+            if (targetStep + clipNote.length <= state.totalSteps) news.push({ step: targetStep, noteIdx: clipNote.noteIdx, length: clipNote.length });
+        });
+        state.tracks[state.currentTrack] = state.tracks[state.currentTrack].concat(news);
+        state.selection = Array.from({length: news.length}, (_, i) => state.tracks[state.currentTrack].length - news.length + i);
+        render(); closeMenu();
+    }
+
+    function menuDel() { 
+        state.tracks[state.currentTrack] = state.tracks[state.currentTrack].filter((_, i) => !state.selection.includes(i)); 
+        state.selection = []; render(); closeMenu(); 
+    }
+    
+    function menuShift(s, n) { 
+        state.selection.forEach(i => { 
+            const note = state.tracks[state.currentTrack][i]; 
+            const ns = note.step + s;
+            if (ns >= 0 && ns + note.length <= state.totalSteps) note.step = ns;
+            note.noteIdx = Math.max(0, Math.min(SCALE.length-1, note.noteIdx + n)); 
+        }); render(); closeMenu(); 
+    }
+    
+    function menuClear() { if(confirm("全消去？")) { state.tracks[state.currentTrack]=[]; render(); } closeMenu(); }
+
+    function addMeasure() { state.totalSteps += 16; refreshRuler(); render(); updatePlayhead(); }
+    
+    function removeMeasure() {
+        if (state.totalSteps <= 16) return;
+        const newTotal = state.totalSteps - 16;
+        state.tracks.forEach((track, idx) => {
+            state.tracks[idx] = track.filter(n => n.step < newTotal).map(n => n.step + n.length > newTotal ? { ...n, length: newTotal - n.step } : n);
+        });
+        state.totalSteps = newTotal;
+        if (state.currentStep >= state.totalSteps) state.currentStep = 0;
+        refreshRuler(); render(); updatePlayhead();
+    }
+
+    function setup() {
+        const keyList = document.getElementById('keyList');
+        SCALE.forEach(n => {
+            const d = document.createElement('div'); d.className = `piano-key ${n.includes('#') ? 'black' : ''}`;
+            d.innerText = n; d.onmousedown = () => { if(audioCtx) playNote(audioCtx, state.currentTrack, SCALE.indexOf(n), 1, audioCtx.currentTime); };
+            keyList.appendChild(d);
+        });
+        const mixer = document.getElementById('mixer');
+        INSTS.forEach((inst, i) => {
+            const card = document.createElement('div'); card.className = `track ${i === 0 ? 'active' : ''}`;
+            card.innerHTML = `<div class="track-label">${inst.name}</div><input type="range" class="vol-slider" min="0" max="1" step="0.01" value="${inst.v}" oninput="INSTS[${i}].v=this.value" onclick="event.stopPropagation()">`;
+            card.onclick = () => { state.currentTrack = i; state.selection = []; document.querySelectorAll('.track').forEach((c, idx) => c.classList.toggle('active', idx === i)); render(); };
+            mixer.appendChild(card);
+        });
+        elViewport.onscroll = () => {
+            document.getElementById('keyList').style.top = -elViewport.scrollTop + 'px';
+            document.getElementById('ruler').style.left = -elViewport.scrollLeft + 'px';
+        };
+        document.getElementById('addMeasBtn').onclick = addMeasure;
+        document.getElementById('remMeasBtn').onclick = removeMeasure;
+        refreshRuler(); render(); updatePlayhead();
+    }
+
+    function refreshRuler() {
+        elRuler.style.width = (state.totalSteps * STEP_W) + 'px';
+        elGrid.style.width = (state.totalSteps * STEP_W) + 'px';
+        elGrid.style.height = (SCALE.length * NOTE_H) + 'px';
+        elRuler.innerHTML = '';
+        for (let i = 0; i < state.totalSteps; i += 4) {
+            const t = document.createElement('div'); t.className = 'marker'; t.style.left = (i * STEP_W) + 'px';
+            if (i % 16 === 0) t.innerText = (i / 16 + 1); elRuler.appendChild(t);
+        }
+    }
+
+    function render() {
+        elGrid.querySelectorAll('.note').forEach(n => n.remove());
+        state.tracks.forEach((track, tIdx) => {
+            track.forEach((n, nIdx) => {
+                const div = document.createElement('div');
+                div.className = `note ${tIdx === state.currentTrack ? '' : 'ghost'} ${tIdx === state.currentTrack && state.selection.includes(nIdx) ? 'selected' : ''}`;
+                div.style.left = (n.step * STEP_W) + 'px'; div.style.top = (n.noteIdx * NOTE_H) + 'px';
+                div.style.width = (n.length * STEP_W) + 'px'; div.style.backgroundColor = INSTS[tIdx].color;
+                elGrid.appendChild(div);
+            });
+        });
+    }
+
+    document.getElementById('playBtn').onclick = () => {
+        if (!audioCtx) initAudioEngine();
+        state.playing = !state.playing;
+        if (state.playing) { state.nextTime = audioCtx.currentTime; scheduler(); }
+    };
+    document.getElementById('saveBtn').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], { type: 'application/json' })); a.download = "project.json"; a.click(); };
+    document.getElementById('loadBtn').onclick = () => document.getElementById('fileIn').click();
+    document.getElementById('fileIn').onchange = (e) => {
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader(); r.onload = (ev) => { 
+            const d = JSON.parse(ev.target.result); state.tracks = d.tracks; state.bpm = d.bpm; state.totalSteps = d.totalSteps; 
+            elBpmInput.value = d.bpm; refreshRuler(); render(); updatePlayhead();
+        }; r.readAsText(f);
+    };
+
+    /** --- WAV書き出しの安定化修正 --- **/
+    async function exportToWav() {
+        const btn = document.getElementById('exportWavBtn');
+        btn.disabled = true;
+        elExportStatus.innerText = "Processing...";
+        
+        try {
+            const stepTime = 60 / state.bpm / 4;
+            const totalDuration = (state.totalSteps * stepTime) + 1.5; // 余韻を追加
+            const sampleRate = 44100;
+            const offlineCtx = new OfflineAudioContext(2, Math.floor(sampleRate * totalDuration), sampleRate);
+
+            state.tracks.forEach((track, i) => {
+                track.forEach(n => {
+                    const freq = FREQS[SCALE[n.noteIdx]];
+                    const dur = n.length * stepTime;
+                    const startTime = n.step * stepTime;
+                    
+                    const g = offlineCtx.createGain();
+                    g.connect(offlineCtx.destination);
+                    const osc = offlineCtx.createOscillator();
+                    osc.type = (i === 3) ? 'square' : (i === 0 ? 'triangle' : 'sine');
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    
+                    g.gain.setValueAtTime(0, startTime);
+                    g.gain.linearRampToValueAtTime(INSTS[i].v, startTime + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+                    
+                    osc.connect(g);
+                    osc.start(startTime);
+                    osc.stop(startTime + dur + 0.1);
+                });
+            });
+
+            const renderedBuffer = await offlineCtx.startRendering();
+            const wavBlob = bufferToWav(renderedBuffer);
+            
+            const url = URL.createObjectURL(wavBlob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `song_${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // クリーンアップ
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+
+            elExportStatus.innerText = "Done!";
+        } catch (err) {
+            console.error(err);
+            elExportStatus.innerText = "Error!";
+        } finally {
+            btn.disabled = false;
+            setTimeout(() => { elExportStatus.innerText = "Ready"; }, 3000);
+        }
+    }
+
+    function bufferToWav(buffer) {
+        let numOfChan = buffer.numberOfChannels,
+            length = buffer.length * numOfChan * 2 + 44,
+            bufferArray = new ArrayBuffer(length),
+            view = new DataView(bufferArray),
+            offset = 0;
+
+        const writeString = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i)); };
+        
+        writeString('RIFF');
+        view.setUint32(offset, length - 8, true); offset += 4;
+        writeString('WAVE');
+        writeString('fmt ');
+        view.setUint32(offset, 16, true); offset += 4;
+        view.setUint16(offset, 1, true); offset += 2;
+        view.setUint16(offset, numOfChan, true); offset += 2;
+        view.setUint32(offset, buffer.sampleRate, true); offset += 4;
+        view.setUint32(offset, buffer.sampleRate * 2 * numOfChan, true); offset += 4;
+        view.setUint16(offset, numOfChan * 2, true); offset += 2;
+        view.setUint16(offset, 16, true); offset += 2;
+        writeString('data');
+        view.setUint32(offset, length - offset - 4, true); offset += 4;
+
+        for (let i = 0; i < buffer.length; i++) {
+            for (let channel = 0; channel < numOfChan; channel++) {
+                let sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+                sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                view.setInt16(offset, sample, true);
+                offset += 2;
+            }
+        }
+        return new Blob([bufferArray], { type: "audio/wav" });
+    }
+
+    document.getElementById('exportWavBtn').onclick = exportToWav;
+    setup();
+</script>
+</body>
+</html>
