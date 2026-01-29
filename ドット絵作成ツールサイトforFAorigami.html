@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎨 ドット絵エディター</title>
+    <title>🎨 拡張版ドット絵エディター</title>
     <style>
         /* 全体レイアウト */
         body {
@@ -50,7 +50,7 @@
             box-shadow: 2px 0 10px rgba(0,0,0,0.5);
             border-right: 1px solid #4b4b4b;
             box-sizing: border-box;
-            overflow-y: auto; /* 万が一の溢れ防止 */
+            overflow-y: auto;
         }
 
         .main-content {
@@ -68,6 +68,7 @@
             line-height: 0;
             background-color: #fff;
             box-shadow: 0 0 40px rgba(0,0,0,0.6);
+            position: relative;
         }
 
         canvas { display: block; cursor: crosshair; }
@@ -117,14 +118,15 @@
 
         .btn-blue { background-color: #4b7bec; color: white; }
         .btn-red { background-color: #eb3b5a; color: white; }
+        .btn-gray { background-color: #718093; color: white; }
         .btn-green { background-color: #20bf6b; color: white; width: 100%; margin-top: 2px; }
 
         /* ツールボタン */
         .tool-btn { 
-            flex: 1; 
-            background-color: #778ca3; 
-            color: white; 
-            display: flex;
+             flex: 1; 
+             background-color: #778ca3; 
+             color: white; 
+             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 2px;
@@ -177,10 +179,10 @@
             display: block;
         }
         .saved-tile.selected { 
-            outline: 2px solid white; 
-            outline-offset: -2px;
+             outline: 2px solid white; 
+             outline-offset: -2px;
             z-index: 5; 
-        }
+         }
         
         .del-btn {
             position: absolute;
@@ -202,10 +204,17 @@
         .saved-item:hover .del-btn { display: block; }
         
         #color-count { font-size: 0.65em; color: #4b7bec; font-weight: bold; }
+        
+        /* ショートカットキー案内 */
+        .shortcut-info {
+            font-size: 0.65em;
+            color: #95afc0;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
-
     <div class="sidebar">
         <div class="terms-header">
             <a href="https://faorigami.github.io/FAorigami_site/Tool_Terms_of_Use.html" target="_blank">利用規約</a>
@@ -227,6 +236,10 @@
                 <button id="resetCanvas" class="btn-red">新規</button>
             </div>
             <div class="row">
+                <span class="label-sm">操作:</span>
+                <button id="undoBtn" class="btn-gray" style="flex:1;">Undo (Ctrl+Z)</button>
+            </div>
+            <div class="row">
                 <span class="label-sm">ズーム:</span>
                 <select id="canvasZoomSelect" style="flex:1;">
                     <option value="0.5">50%</option>
@@ -238,10 +251,10 @@
         </div>
 
         <div class="control-group">
-            <h3>🖌️ Tools (Size)</h3>
+            <h3>🖌️ Tools</h3>
             <div class="row">
                 <div id="penTool" class="tool-btn active">
-                    <span>🖌️ 筆</span>
+                    <span>筆</span>
                     <select id="penSizeSelect">
                         <option value="1">1x1</option>
                         <option value="2">2x2</option>
@@ -250,7 +263,7 @@
                     </select>
                 </div>
                 <div id="eraserTool" class="tool-btn">
-                    <span>🧼 消しゴム</span>
+                    <span>消しゴム</span>
                     <select id="eraserSizeSelect">
                         <option value="1">1x1</option>
                         <option value="2">2x2</option>
@@ -258,6 +271,14 @@
                         <option value="4">4x4</option>
                     </select>
                 </div>
+                <div id="pickerTool" class="tool-btn">
+                    <span>スポイト</span>
+                    <div style="font-size:0.6em; margin-top:4px;">(Alt+Click)</div>
+                </div>
+            </div>
+            <div class="shortcut-info">
+                ※ Shift+クリックで直線描画<br>
+                ※ Alt+クリックでスポイト
             </div>
         </div>
 
@@ -315,6 +336,7 @@
         
         const penTool = document.getElementById('penTool');
         const eraserTool = document.getElementById('eraserTool');
+        const pickerTool = document.getElementById('pickerTool');
         const penSizeSelect = document.getElementById('penSizeSelect');
         const eraserSizeSelect = document.getElementById('eraserSizeSelect');
 
@@ -326,14 +348,22 @@
         let cellSize;
         let currentColor = 'black';
         let isErasing = false;
+        let isPicking = false;
         let isDrawing = false;
         let currentZoom = 1.0;
         
-        // サイズ設定を分離して保持
+        // 直線描画用
+        let lastX = null;
+        let lastY = null;
+        let isShiftDown = false;
+
         let brushSize = 1;
         let eraserSize = 3;
 
         let pixelData = []; 
+        let undoStack = [];
+        const MAX_UNDO = 20;
+
         let savedColorsMap = new Map(); 
         let customColorIndex = 100;
         const MAX_COLORS = 45;
@@ -348,6 +378,19 @@
 
         function setupGridData() {
             pixelData = Array.from({ length: gridSize }, () => Array(gridSize).fill(0));
+            undoStack = [];
+        }
+
+        function saveState() {
+            undoStack.push(JSON.stringify(pixelData));
+            if (undoStack.length > MAX_UNDO) undoStack.shift();
+        }
+
+        function undo() {
+            if (undoStack.length > 0) {
+                pixelData = JSON.parse(undoStack.pop());
+                draw();
+            }
         }
 
         function updateCanvasView() {
@@ -363,12 +406,12 @@
                 for (let j = 0; j < gridSize; j++) {
                     const val = pixelData[i][j];
                     if (val !== 0) {
-                        ctx.fillStyle = (typeof val === 'string') ? val : savedColorsMap.get(val);
-                        if (!ctx.fillStyle) ctx.fillStyle = "rgba(0,0,0,0)";
+                        ctx.fillStyle = getActualColor(val);
                         ctx.fillRect(i * cellSize, j * cellSize, Math.ceil(cellSize), Math.ceil(cellSize));
                     }
                 }
             }
+            // グリッド線
             ctx.strokeStyle = "rgba(0,0,0,0.1)";
             ctx.lineWidth = 0.5;
             for (let i = 0; i <= gridSize; i++) {
@@ -377,12 +420,29 @@
             }
         }
 
-        function paint(e) {
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor(((e.clientX - rect.left) / currentZoom) / cellSize);
-            const y = Math.floor(((e.clientY - rect.top) / currentZoom) / cellSize);
-            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+        function getActualColor(val) {
+            if (typeof val === 'string') return val;
+            return savedColorsMap.get(val) || "rgba(0,0,0,0)";
+        }
 
+        // ブレゼンハムのアルゴリズムを用いた直線補完描画
+        function drawLine(x0, y0, x1, y1) {
+            const dx = Math.abs(x1 - x0);
+            const dy = Math.abs(y1 - y0);
+            const sx = (x0 < x1) ? 1 : -1;
+            const sy = (y0 < y1) ? 1 : -1;
+            let err = dx - dy;
+
+            while (true) {
+                applyPaintAt(x0, y0);
+                if (x0 === x1 && y0 === y1) break;
+                const e2 = 2 * err;
+                if (e2 > -dy) { err -= dy; x0 += sx; }
+                if (e2 < dx) { err += dx; y0 += sy; }
+            }
+        }
+
+        function applyPaintAt(x, y) {
             const color = isErasing ? 0 : currentColor;
             const currentSize = isErasing ? eraserSize : brushSize;
             const offset = Math.floor(currentSize / 2);
@@ -391,44 +451,98 @@
                 for (let j = 0; j < currentSize; j++) {
                     const tx = x + i - offset;
                     const ty = y + j - offset;
-                    if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) pixelData[tx][ty] = color;
+                    if (tx >= 0 && tx < gridSize && ty >= 0 && ty < gridSize) {
+                        pixelData[tx][ty] = color;
+                    }
                 }
             }
+        }
+
+        function handlePointerAction(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor(((e.clientX - rect.left) / currentZoom) / cellSize);
+            const y = Math.floor(((e.clientY - rect.top) / currentZoom) / cellSize);
+            
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+
+            // スポイト機能
+            if (isPicking || e.altKey) {
+                const val = pixelData[x][y];
+                if (val !== 0) {
+                    const colorVal = getActualColor(val);
+                    if (typeof val === 'number') {
+                        currentColor = val;
+                    } else {
+                        currentColor = colorVal;
+                    }
+                    setTool('pen');
+                    refreshColorSelection();
+                }
+                return;
+            }
+
+            // 直線描画 (Shift押下時)
+            if (e.shiftKey && lastX !== null && lastY !== null) {
+                saveState();
+                drawLine(lastX, lastY, x, y);
+            } else {
+                if (e.type === 'mousedown') saveState();
+                applyPaintAt(x, y);
+            }
+
+            lastX = x;
+            lastY = y;
             draw();
         }
 
         // --- ツール切り替えロジック ---
-        function setTool(erasing) {
-            isErasing = erasing;
-            if (isErasing) {
-                penTool.classList.remove('active');
-                eraserTool.classList.add('active');
+        function setTool(mode) {
+            isErasing = (mode === 'eraser');
+            isPicking = (mode === 'picker');
+            
+            penTool.classList.toggle('active', mode === 'pen');
+            eraserTool.classList.toggle('active', mode === 'eraser');
+            pickerTool.classList.toggle('active', mode === 'picker');
+
+            if (mode === 'eraser' || mode === 'picker') {
                 document.querySelectorAll('.color-tile, .saved-tile').forEach(el => el.classList.remove('selected'));
             } else {
-                eraserTool.classList.remove('active');
-                penTool.classList.add('active');
-                // 筆に戻した時は直前の色（currentColor）を選択状態に戻す
                 refreshColorSelection();
             }
         }
 
-        penTool.addEventListener('click', (e) => {
-            if(e.target === penSizeSelect) return; // セレクトボックス操作時は無視
-            setTool(false);
-        });
-
-        eraserTool.addEventListener('click', (e) => {
-            if(e.target === eraserSizeSelect) return; // セレクトボックス操作時は無視
-            setTool(true);
-        });
-
+        penTool.addEventListener('click', (e) => { if(e.target === penSizeSelect) return; setTool('pen'); });
+        eraserTool.addEventListener('click', (e) => { if(e.target === eraserSizeSelect) return; setTool('eraser'); });
+        pickerTool.addEventListener('click', () => setTool('picker'));
+        
         penSizeSelect.addEventListener('change', (e) => brushSize = parseInt(e.target.value));
         eraserSizeSelect.addEventListener('change', (e) => eraserSize = parseInt(e.target.value));
 
         // --- マウスイベント ---
-        canvas.addEventListener('mousedown', (e) => { isDrawing = true; paint(e); });
-        canvas.addEventListener('mousemove', (e) => { if(isDrawing) paint(e); });
-        window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mousedown', (e) => { 
+            isDrawing = true; 
+            handlePointerAction(e); 
+        });
+        canvas.addEventListener('mousemove', (e) => { 
+            if(isDrawing && !e.shiftKey) handlePointerAction(e); 
+        });
+        window.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        // キーボードショートカット
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') isShiftDown = true;
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') isShiftDown = false;
+        });
+
+        document.getElementById('undoBtn').addEventListener('click', undo);
 
         document.getElementById('applyDisplaySize').addEventListener('click', () => {
             currentDisplaySize = parseInt(displaySizeInput.value);
@@ -449,12 +563,12 @@
 
         document.getElementById('palette').addEventListener('click', (e) => {
             if(e.target.classList.contains('color-tile')) {
-                selectColor(e.target.dataset.color, e.target);
+                selectColor(e.target.dataset.color);
             }
         });
 
-        function selectColor(colorId, element) {
-            setTool(false); // 色を選んだら自動的に筆ツールへ
+        function selectColor(colorId) {
+            setTool('pen'); 
             currentColor = colorId;
             refreshColorSelection();
         }
@@ -490,7 +604,6 @@
             for(let i=0; i<MAX_COLORS; i++) {
                 const item = document.createElement('div');
                 item.className = 'saved-item';
-                
                 if(i < ids.length) {
                     const id = ids[i];
                     const color = savedColorsMap.get(id);
@@ -498,8 +611,8 @@
                     tile.className = 'saved-tile';
                     tile.dataset.id = id;
                     tile.style.backgroundColor = color;
-                    if (currentColor === id && !isErasing) tile.classList.add('selected');
-                    tile.onclick = () => selectColor(id, tile);
+                    if (currentColor === id && !isErasing && !isPicking) tile.classList.add('selected');
+                    tile.onclick = () => selectColor(id);
                     
                     const del = document.createElement('div');
                     del.className = 'del-btn';
@@ -514,6 +627,7 @@
         }
 
         function deleteColor(id) {
+            saveState();
             savedColorsMap.delete(id);
             if (currentColor === id) {
                 currentColor = 'black';
@@ -545,8 +659,8 @@
                 for (let j = 0; j < gridSize; j++) {
                     const val = pixelData[i][j];
                     if(val !== 0) {
-                        oCtx.fillStyle = (typeof val === 'string') ? val : savedColorsMap.get(val);
-                        if (oCtx.fillStyle) oCtx.fillRect(i * unit, j * unit, Math.ceil(unit), Math.ceil(unit));
+                        oCtx.fillStyle = getActualColor(val);
+                        oCtx.fillRect(i * unit, j * unit, Math.ceil(unit), Math.ceil(unit));
                     }
                 }
             }
